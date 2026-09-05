@@ -8,7 +8,14 @@ import { Logo } from "@/components/Logo";
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [role, setRole] = useState<"buyer" | "organizer" | "admin">("buyer");
   const isRegister = mode === "register";
+
+  function go() {
+    if (role === "admin") router.push("/admin");
+    else if (role === "organizer") router.push("/organizador");
+    else router.push("/eventos/neon");
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-cream p-6">
@@ -69,9 +76,31 @@ export default function LoginPage() {
             />
           </label>
 
+          <div className="mt-3 mb-1 text-[11px] font-extrabold uppercase text-muted">Entrar como</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {(
+              [
+                ["buyer", "Comprador"],
+                ["organizer", "Organizador"],
+                ["admin", "Super admin"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setRole(id)}
+                className={`rounded py-2 text-[11px] font-extrabold ${
+                  role === id ? "bg-ink text-cream" : "bg-cream text-muted"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <button
             type="button"
-            onClick={() => router.push("/eventos/neon")}
+            onClick={go}
             className="mt-[18px] w-full rounded bg-coral py-3.5 text-sm font-extrabold text-white"
           >
             {isRegister ? "Crear cuenta" : "Ingresar"}

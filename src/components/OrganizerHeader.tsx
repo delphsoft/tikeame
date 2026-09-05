@@ -2,12 +2,17 @@ import Link from "next/link";
 import { Logo } from "./Logo";
 
 const links = [
-  { href: "/organizador", label: "Resumen" },
-  { href: "/organizador/checkin", label: "Check-in" },
-  { href: "/organizador/rrpp", label: "RRPP y Referidos" },
-];
+  { href: "/organizador", label: "Eventos", key: "eventos" },
+  { href: "/organizador/nuevo", label: "Nuevo evento", key: "nuevo" },
+  { href: "/organizador/checkin", label: "Check-in", key: "checkin" },
+  { href: "/organizador/rrpp", label: "RRPP", key: "rrpp" },
+] as const;
 
-export function OrganizerHeader({ active }: { active: "resumen" | "checkin" | "rrpp" }) {
+export function OrganizerHeader({
+  active,
+}: {
+  active: "eventos" | "nuevo" | "checkin" | "rrpp" | "detalle";
+}) {
   return (
     <header className="bg-ink px-5 py-4 md:px-10">
       <div className="mx-auto flex max-w-[1160px] flex-wrap items-center justify-between gap-4">
@@ -16,10 +21,7 @@ export function OrganizerHeader({ active }: { active: "resumen" | "checkin" | "r
           <span className="text-[13px] font-bold text-muted2">Panel organizador</span>
           <nav className="flex flex-wrap gap-1">
             {links.map((l) => {
-              const isActive =
-                (active === "resumen" && l.href === "/organizador") ||
-                (active === "checkin" && l.href.includes("checkin")) ||
-                (active === "rrpp" && l.href.includes("rrpp"));
+              const isActive = active === l.key || (active === "detalle" && l.key === "eventos");
               return (
                 <Link
                   key={l.href}
@@ -34,8 +36,8 @@ export function OrganizerHeader({ active }: { active: "resumen" | "checkin" | "r
             })}
           </nav>
         </div>
-        <Link href="/eventos/neon" className="text-[13px] font-extrabold text-cream">
-          Ver página del evento →
+        <Link href="/admin" className="text-[13px] font-extrabold text-muted2 hover:text-cream">
+          Super admin →
         </Link>
       </div>
     </header>

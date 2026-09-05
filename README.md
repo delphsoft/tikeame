@@ -19,9 +19,11 @@ Este repo es el prototipo navegable armado a partir de las pantallas de Tiko (la
 2. Evento público NEÓN → `/eventos/neon`
 3. Checkout (Mercado Pago simulado) → `/checkout`
 4. Confirmación + QR → `/confirmacion`
-5. Panel organizador → `/organizador`
-6. Check-in en puerta → `/organizador/checkin`
-7. Ranking RRPP → `/organizador/rrpp`
+5. Panel organizador (crear eventos) → `/organizador`
+6. Nuevo evento → `/organizador/nuevo`
+7. Check-in en puerta → `/organizador/checkin`
+8. Ranking RRPP → `/organizador/rrpp`
+9. Super admin → `/admin`
 
 El login no valida credenciales. Las compras y el scanner viven en el cliente (sessionStorage).
 

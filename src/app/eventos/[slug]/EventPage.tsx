@@ -3,20 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { HeroParallax } from "@/components/HeroParallax";
 import { Perforation } from "@/components/Perforation";
 import { QtyStepper } from "@/components/QtyStepper";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useCart } from "@/lib/cart";
-import {
-  COMMISSION_PCT,
-  EVENT,
-  FAQS,
-  GALLERY,
-  SPONSORS,
-  TICKET_TIERS,
-  UPCOMING,
-} from "@/lib/data";
+import { FAQS, GALLERY, SPONSORS } from "@/lib/data";
+import { eventSold, eventCapacity, useEvents } from "@/lib/events";
 import { fmtARS, pad2 } from "@/lib/money";
 
 function useCountdown(target: Date) {
@@ -34,22 +28,32 @@ function useCountdown(target: Date) {
   };
 }
 
-export function EventPage() {
+export function EventPage({ slug }: { slug: string }) {
   const router = useRouter();
-  const { qty, inc, dec, subtotal, fee, total, itemCount } = useCart();
-  const countdown = useCountdown(EVENT.eventDate);
+  const { getEvent, events } = useEvents();
+  const event = getEvent(slug);
+  const { qty, inc, dec } = useCart();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const countdown = useCountdown(event ? new Date(`${event.dateISO}T${event.timeLabel}:00`) : new Date());
+
+  const tickets = event?.tickets ?? [];
+  const subtotal = tickets.reduce((s, t) => s + qty[t.key] * t.price, 0);
+  const commissionPct = event?.commissionPct ?? 3;
+  const fee = subtotal * (commissionPct / 100);
+  const total = subtotal + fee;
+  const itemCount = tickets.reduce((s, t) => s + qty[t.key], 0);
+  const ticketsLeft = event ? Math.max(0, eventCapacity(event) - eventSold(event)) : 0;
+  const rich = slug === "neon";
 
   const buyLabel = itemCount > 0 ? "Comprar" : "Elegí tu entrada";
-  const mapsQuery = encodeURIComponent(EVENT.mapsQuery);
-  const shareWhatsapp = useMemo(() => {
-    const url = typeof window === "undefined" ? "" : window.location.href;
-    return (
-      "https://wa.me/?text=" +
-      encodeURIComponent(`¡Vengan a ${EVENT.fullName} el ${EVENT.dateLabel} en Crobar! ${url}`)
-    );
-  }, []);
+  const mapsQuery = encodeURIComponent(event?.mapsQuery ?? "");
+  const shareWhatsapp = event
+    ? "https://wa.me/?text=" +
+      encodeURIComponent(
+        `¡Vengan a ${event.title} — ${event.subtitle} el ${event.dateLabel} en ${event.venueName}! ${typeof window === "undefined" ? "" : window.location.href}`,
+      )
+    : "#";
 
   function goCheckout() {
     if (itemCount === 0) return;
@@ -62,41 +66,45 @@ export function EventPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  if (!event) {
+    return (
+      <div className="min-h-screen bg-cream">
+        <SiteHeader variant="plain" />
+        <div className="px-6 py-24 text-center">
+          <h1 className="font-display text-4xl uppercase">Este evento no está</h1>
+          <Link href="/" className="mt-4 inline-block text-sm font-bold text-coral">
+            Volver al inicio
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-cream pb-[110px]">
       <SiteHeader variant="event" />
 
-      <section className="relative flex min-h-[560px] flex-col justify-end overflow-hidden">
-        <Image
-          src={EVENT.hero}
-          alt="NEÓN — Fiesta Electrónica"
-          fill
-          priority
-          className="hero-zoom object-cover saturate-110"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(43,29,74,0.35)_0%,rgba(43,29,74,0.55)_55%,rgba(20,14,36,0.96)_100%)]" />
-        <div className="dot-grid absolute inset-0" />
-        <div className="relative mx-auto w-full max-w-[1240px] px-5 pb-[120px] md:px-10">
+      <HeroParallax src={event.hero} alt={`${event.title} — ${event.subtitle}`} minHeight="event">
           <div className="mb-[18px] flex flex-wrap gap-2.5">
             <span className="rounded-full bg-coral px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wide text-white">
-              {EVENT.category}
+              {event.category}
             </span>
             <span className="rounded-full bg-cream/15 px-3.5 py-1.5 text-xs font-extrabold text-cream">
-              Quedan {EVENT.ticketsLeft} entradas
+              Quedan {ticketsLeft} entradas
             </span>
           </div>
           <h1 className="font-display text-7xl uppercase leading-[0.98] text-cream md:text-[88px]">
-            {EVENT.title}
+            {event.title}
           </h1>
           <div className="mt-1 font-display text-[26px] uppercase tracking-wide text-coral">
-            {EVENT.subtitle}
+            {event.subtitle}
           </div>
           <div className="mt-[22px] flex flex-wrap gap-7">
             {[
-              ["Fecha", EVENT.dateLabel],
-              ["Hora", EVENT.timeLabel],
-              ["Lugar", EVENT.venue],
-              ["Desde", fmtARS(EVENT.fromPrice)],
+              ["Fecha", event.dateLabel],
+              ["Hora", event.timeLabel],
+              ["Lugar", event.venue],
+              ["Desde", fmtARS(tickets.length ? Math.min(...tickets.map((t) => t.price)) : 0)],
             ].map(([k, v]) => (
               <div key={k} className="flex flex-col gap-0.5">
                 <span className="text-[11px] font-bold uppercase text-muted2">{k}</span>
@@ -104,8 +112,7 @@ export function EventPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
+      </HeroParallax>
 
       <div className="flex flex-wrap items-center justify-center gap-9 bg-ink px-5 py-5 md:px-10">
         <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-muted2">
@@ -133,11 +140,13 @@ export function EventPage() {
 
       <div className="mx-auto grid max-w-[1240px] gap-10 px-5 pt-14 md:grid-cols-[1.5fr_1fr] md:gap-14 md:px-10">
         <div>
+          {event.lineup.length > 0 && (
+          <>
           <div className="text-xs font-extrabold uppercase tracking-[0.12em] text-coral">
             Line up
           </div>
           <div className="mt-3.5 flex flex-wrap gap-2.5">
-            {EVENT.lineup.map((a) => (
+            {event.lineup.map((a) => (
               <span
                 key={a}
                 className="rounded-full border-2 border-ink bg-white px-[18px] py-2 text-sm font-extrabold"
@@ -146,17 +155,19 @@ export function EventPage() {
               </span>
             ))}
           </div>
+          </>
+          )}
 
           <div className="mt-11 text-xs font-extrabold uppercase tracking-[0.12em] text-coral">
             Sobre el evento
           </div>
-          <p className="mt-3.5 max-w-[560px] text-[15.5px] leading-[1.7] text-plum">{EVENT.about}</p>
+          <p className="mt-3.5 max-w-[560px] text-[15.5px] leading-[1.7] text-plum">{event.about}</p>
 
           <div className="mt-11 flex flex-wrap gap-4">
             <div className="min-w-[220px] flex-1 rounded border-2 border-ink bg-white px-5 py-[18px]">
               <div className="text-[11px] font-extrabold uppercase text-muted">Venue</div>
-              <div className="mt-1.5 text-[15px] font-bold">{EVENT.venueName}</div>
-              <div className="mt-0.5 text-[13px] text-muted">{EVENT.venueAddress}</div>
+              <div className="mt-1.5 text-[15px] font-bold">{event.venueName}</div>
+              <div className="mt-0.5 text-[13px] text-muted">{event.venueAddress}</div>
               <div className="mt-3 flex gap-2">
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
@@ -185,13 +196,15 @@ export function EventPage() {
 
           <div className="mt-6 h-[220px] overflow-hidden rounded border-2 border-ink">
             <iframe
-              title="Mapa de Crobar"
+              title={`Mapa de ${event.venueName}`}
               src={`https://www.google.com/maps?q=${mapsQuery}&output=embed`}
               className="block h-full w-full border-0"
               loading="lazy"
             />
           </div>
 
+          {rich && (
+          <>
           <div className="mt-11 text-xs font-extrabold uppercase tracking-[0.12em] text-coral">
             Distribución del espacio
           </div>
@@ -232,17 +245,19 @@ export function EventPage() {
               </div>
             ))}
           </div>
+          </>
+          )}
         </div>
 
         <div id="tickets" className="self-start lg:sticky lg:top-20">
           <div className="relative rounded-md bg-ink px-[26px] py-7 shadow-[0_24px_48px_rgba(43,29,74,0.22)]">
             <div className="font-display text-xl uppercase text-cream">Elegí tu entrada</div>
             <div className="mt-5 flex flex-col gap-3">
-              {TICKET_TIERS.map((t) => (
+              {tickets.map((t) => (
                 <div
                   key={t.key}
                   className="rounded bg-plum px-[18px] py-4"
-                  style={{ opacity: t.soldOut ? 0.55 : 1 }}
+                  style={{ opacity: t.sold >= t.cap ? 0.55 : 1 }}
                 >
                   <div className="flex items-center justify-between gap-2.5">
                     <div>
@@ -252,7 +267,7 @@ export function EventPage() {
                         {t.note ? ` · ${t.note}` : ""}
                       </div>
                     </div>
-                    {t.soldOut ? (
+                    {t.sold >= t.cap ? (
                       <span className="rounded-full bg-cream/15 px-2.5 py-1 text-[11px] font-extrabold text-cream">
                         AGOTADO
                       </span>
@@ -274,7 +289,7 @@ export function EventPage() {
               <span>{fmtARS(subtotal)}</span>
             </div>
             <div className="mt-1.5 flex justify-between text-[13px] font-semibold text-muted2">
-              <span>Cargo de servicio ({COMMISSION_PCT}%)</span>
+              <span>Cargo de servicio ({commissionPct}%)</span>
               <span>{fmtARS(fee)}</span>
             </div>
             <div className="mt-3.5 flex justify-between text-[19px] font-extrabold text-cream">
@@ -312,6 +327,8 @@ export function EventPage() {
         </div>
       </div>
 
+      {rich && (
+      <>
       <Perforation className="mx-5 mt-14" />
 
       <div className="mx-auto max-w-[1240px] px-5 pt-11 md:px-10">
@@ -343,6 +360,8 @@ export function EventPage() {
           ))}
         </div>
       </div>
+      </>
+      )}
 
       <Perforation className="mx-5 mt-14" />
 
@@ -351,15 +370,18 @@ export function EventPage() {
           Próximos eventos de Tikeame
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
-          {UPCOMING.map((e) => (
+          {events
+            .filter((e) => e.slug !== event.slug && e.status !== "draft")
+            .slice(0, 3)
+            .map((e) => (
             <Link
               key={e.slug}
-              href="/eventos/neon"
+              href={`/eventos/${e.slug}`}
               className="block overflow-hidden rounded border-2 border-ink bg-white"
             >
-              <Image src={e.image} alt={e.title} width={640} height={130} className="h-[130px] w-full object-cover" />
+              <Image src={e.hero} alt={e.title} width={640} height={130} className="h-[130px] w-full object-cover" />
               <div className="px-4 py-3.5">
-                <div className="text-[11px] font-extrabold uppercase text-coral">{e.date}</div>
+                <div className="text-[11px] font-extrabold uppercase text-coral">{e.dateLabel}</div>
                 <div className="mt-1 text-[15px] font-extrabold text-ink">{e.title}</div>
                 <div className="mt-0.5 text-xs text-muted">{e.venue}</div>
               </div>

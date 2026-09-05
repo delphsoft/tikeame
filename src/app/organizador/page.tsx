@@ -1,34 +1,57 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { OrganizerHeader } from "@/components/OrganizerHeader";
-import { EVENT, ORGANIZER_SALES, ORGANIZER_STATS, TICKET_TIERS } from "@/lib/data";
+import {
+  eventCapacity,
+  eventGross,
+  eventSold,
+  statusLabel,
+  statusTone,
+  useEvents,
+} from "@/lib/events";
 import { fmtARS } from "@/lib/money";
 
-export default function OrganizadorPage() {
-  function exportCsv() {
-    const header = "Comprador,Entrada,Cantidad,Fecha";
-    const rows = ORGANIZER_SALES.map((s) => `${s.name},${s.tier},${s.qty},${s.date}`).join("\n");
-    const blob = new Blob([header + "\n" + rows], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "neon-ventas.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+export default function OrganizadorHome() {
+  const { mine } = useEvents();
+  const sold = mine.reduce((s, e) => s + eventSold(e), 0);
+  const cap = mine.reduce((s, e) => s + eventCapacity(e), 0);
+  const gross = mine.reduce((s, e) => s + eventGross(e), 0);
+  const live = mine.filter((e) => e.status === "on_sale").length;
 
   return (
     <div className="min-h-screen bg-cream">
-      <OrganizerHeader active="resumen" />
+      <OrganizerHeader active="eventos" />
       <div className="mx-auto max-w-[1160px] px-5 py-9 md:px-10">
-        <h1 className="font-display text-[26px] uppercase">{EVENT.fullName}</h1>
-        <div className="mt-1 text-[13px] text-muted">
-          {EVENT.dateLabel} · {EVENT.venue}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-coral">
+              Tiko Producciones
+            </div>
+            <h1 className="mt-1 font-display text-[28px] uppercase">Tus eventos</h1>
+            <p className="mt-1 text-[13px] text-muted">Creá, publicá y cobrá. La plata va a tu MP.</p>
+          </div>
+          <Link
+            href="/organizador/nuevo"
+            className="rounded bg-coral px-5 py-3 text-sm font-extrabold text-white"
+          >
+            + Nuevo evento
+          </Link>
         </div>
 
         <div className="mt-7 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-          {ORGANIZER_STATS.map((s) => (
-            <div key={s.label} className="rounded-md border-2 border-ink bg-white p-[18px]">
+          {[
+            { label: "Eventos en venta", value: String(live), sub: `${mine.length} en total` },
+            { label: "Entradas vendidas", value: sold.toLocaleString("es-AR"), sub: `de ${cap}` },
+            { label: "Recaudado bruto", value: fmtARS(gross), sub: "100% a tu cuenta" },
+            { label: "Ocupación", value: cap ? `${Math.round((sold / cap) * 100)}%` : "0%", sub: "sobre capacidad" },
+          ].map((s, i) => (
+            <div
+              key={s.label}
+              className="dash-in rounded-md border-2 border-ink bg-white p-[18px]"
+              style={{ animationDelay: `${i * 70}ms` }}
+            >
               <div className="text-[11px] font-extrabold uppercase text-muted">{s.label}</div>
               <div className="mt-2 font-display text-[26px]">{s.value}</div>
               <div className="mt-1 text-xs font-bold text-teal">{s.sub}</div>
@@ -36,69 +59,47 @@ export default function OrganizadorPage() {
           ))}
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.3fr]">
-          <div>
-            <div className="text-xs font-extrabold uppercase tracking-[0.1em] text-coral">
-              Ventas por tipo de entrada
-            </div>
-            <div className="mt-4 flex flex-col gap-3.5">
-              {TICKET_TIERS.map((t) => {
-                const pct = Math.round((t.sold / t.cap) * 100);
-                return (
-                  <div key={t.key}>
-                    <div className="flex justify-between text-[13px] font-bold">
-                      <span>{t.name}</span>
-                      <span>
-                        {t.sold}/{t.cap}
-                      </span>
+        <div className="mt-8 grid gap-4">
+          {mine.map((e) => {
+            const soldN = eventSold(e);
+            const capN = eventCapacity(e);
+            const pct = capN ? Math.round((soldN / capN) * 100) : 0;
+            return (
+              <Link
+                key={e.slug}
+                href={`/organizador/${e.slug}`}
+                className="grid overflow-hidden rounded-md border-2 border-ink bg-white md:grid-cols-[180px_1fr]"
+              >
+                <div className="relative h-[140px] md:h-auto">
+                  <Image src={e.hero} alt={e.title} fill className="object-cover" />
+                </div>
+                <div className="flex flex-col justify-between gap-3 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="font-display text-xl uppercase">{e.title}</div>
+                      <div className="text-[13px] text-muted">
+                        {e.dateLabel} · {e.timeLabel} · {e.venue}
+                      </div>
                     </div>
-                    <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-border">
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold ${statusTone(e.status)}`}>
+                      {statusLabel(e.status)}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="mb-1 flex justify-between text-xs font-bold">
+                      <span>
+                        {soldN}/{capN} entradas
+                      </span>
+                      <span>{fmtARS(eventGross(e))}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-border">
                       <div className="h-full rounded-full bg-ink" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
-                );
-              })}
-            </div>
-            <div className="mt-7 rounded-md bg-teal/12 px-4 py-3.5">
-              <div className="text-[11px] font-extrabold uppercase text-teal">Ingresos netos</div>
-              <div className="mt-1 font-display text-[22px]">{fmtARS(3128400)}</div>
-              <div className="mt-0.5 text-xs text-muted">Ya descontada la comisión del servicio</div>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="text-xs font-extrabold uppercase tracking-[0.1em] text-coral">
-                Ventas recientes
-              </div>
-              <button
-                type="button"
-                onClick={exportCsv}
-                className="rounded-full border-2 border-ink bg-white px-3.5 py-1.5 text-xs font-extrabold text-ink"
-              >
-                Exportar CSV
-              </button>
-            </div>
-            <div className="mt-4 overflow-hidden rounded-md border-2 border-ink bg-white">
-              <div className="grid grid-cols-[1.4fr_1fr_0.6fr_0.9fr] bg-cream px-4 py-2.5 text-[11px] font-extrabold uppercase text-muted">
-                <div>Comprador</div>
-                <div>Entrada</div>
-                <div>Cant.</div>
-                <div>Fecha</div>
-              </div>
-              {ORGANIZER_SALES.map((sale) => (
-                <div
-                  key={sale.name + sale.date}
-                  className="grid grid-cols-[1.4fr_1fr_0.6fr_0.9fr] border-t border-border px-4 py-2.5 text-[13px]"
-                >
-                  <div className="font-bold">{sale.name}</div>
-                  <div className="text-muted">{sale.tier}</div>
-                  <div>{sale.qty}</div>
-                  <div className="text-muted">{sale.date}</div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Manrope } from "next/font/google";
 import { CartProvider } from "@/lib/cart";
+import { EventsProvider } from "@/lib/events";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -43,7 +44,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es-AR" className={`${anton.variable} ${manrope.variable} h-full antialiased`}>
       <body className="min-h-full bg-cream font-sans text-ink">
-        <CartProvider>{children}</CartProvider>
+        <CartProvider>
+          <EventsProvider>{children}</EventsProvider>
+        </CartProvider>
       </body>
     </html>
   );

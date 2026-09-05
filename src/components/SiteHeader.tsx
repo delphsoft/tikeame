@@ -31,12 +31,15 @@ export function SiteHeader({ variant = "landing" }: SiteHeaderProps) {
               <a href="#fidelizacion" className="text-sm font-bold text-ink">
                 RRPP y fidelización
               </a>
-              <a
-                href="mailto:hola@tikeame.com.ar?subject=Quiero%20sumar%20mi%20evento%20a%20Tikeame"
+              <Link href="/organizador" className="text-sm font-bold text-ink">
+                Organizador
+              </Link>
+              <Link
+                href="/organizador/nuevo"
                 className="rounded bg-coral px-5 py-[11px] text-sm font-extrabold text-white"
               >
                 Sumar mi evento
-              </a>
+              </Link>
             </>
           )}
           {variant === "event" && (
@@ -80,12 +83,15 @@ export function SiteHeader({ variant = "landing" }: SiteHeaderProps) {
               <a href="#fidelizacion" onClick={() => setOpen(false)} className="text-sm font-bold">
                 RRPP y fidelización
               </a>
-              <a
-                href="mailto:hola@tikeame.com.ar?subject=Quiero%20sumar%20mi%20evento%20a%20Tikeame"
+              <Link href="/organizador" className="text-sm font-bold">
+                Organizador
+              </Link>
+              <Link
+                href="/organizador/nuevo"
                 className="rounded bg-coral px-5 py-3 text-center text-sm font-extrabold text-white"
               >
                 Sumar mi evento
-              </a>
+              </Link>
             </>
           )}
           {variant === "event" && (

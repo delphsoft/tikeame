@@ -4,6 +4,8 @@ import { site } from "@/lib/site";
 export default function sitemap(): MetadataRoute.Sitemap {
   const paths = [
     "/",
+    "/organizadores",
+    "/fondos",
     "/login",
     "/eventos/neon",
     "/checkout",

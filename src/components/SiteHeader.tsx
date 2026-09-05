@@ -5,11 +5,12 @@ import { useState } from "react";
 import { Logo } from "./Logo";
 
 type SiteHeaderProps = {
-  variant?: "landing" | "event" | "plain";
+  variant?: "home" | "organizers" | "event" | "plain" | "landing";
 };
 
-export function SiteHeader({ variant = "landing" }: SiteHeaderProps) {
+export function SiteHeader({ variant = "home" }: SiteHeaderProps) {
   const [open, setOpen] = useState(false);
+  const isLanding = variant === "landing" || variant === "organizers";
   const dark = variant === "event";
 
   return (
@@ -23,7 +24,29 @@ export function SiteHeader({ variant = "landing" }: SiteHeaderProps) {
       <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-5 py-4 md:px-12">
         <Logo href="/" light={dark} />
         <nav className="hidden items-center gap-8 md:flex">
-          {variant === "landing" && (
+          {(variant === "home" || variant === "plain") && (
+            <>
+              <a href="#eventos" className="text-sm font-bold text-ink">
+                Eventos
+              </a>
+              <a href="#como-funciona" className="text-sm font-bold text-ink">
+                Cómo funciona
+              </a>
+              <Link href="/login" className="text-sm font-bold text-ink">
+                Iniciar sesión
+              </Link>
+              <Link href="/organizadores" className="text-sm font-bold text-muted">
+                Soy organizador
+              </Link>
+              <a
+                href="#eventos"
+                className="rounded bg-coral px-5 py-[11px] text-sm font-extrabold text-white"
+              >
+                Ver eventos
+              </a>
+            </>
+          )}
+          {isLanding && (
             <>
               <a href="#como-funciona" className="text-sm font-bold text-ink">
                 Cómo funciona
@@ -31,8 +54,8 @@ export function SiteHeader({ variant = "landing" }: SiteHeaderProps) {
               <a href="#fidelizacion" className="text-sm font-bold text-ink">
                 RRPP y fidelización
               </a>
-              <Link href="/organizador" className="text-sm font-bold text-ink">
-                Organizador
+              <Link href="/" className="text-sm font-bold text-ink">
+                Home eventos
               </Link>
               <Link
                 href="/organizador/nuevo"
@@ -44,8 +67,8 @@ export function SiteHeader({ variant = "landing" }: SiteHeaderProps) {
           )}
           {variant === "event" && (
             <>
-              <Link href="/organizador" className="text-xs font-bold text-muted2">
-                Organizador
+              <Link href="/" className="text-xs font-bold text-muted2">
+                Eventos
               </Link>
               <Link href="/login" className="text-xs font-bold text-cream">
                 Iniciar sesión
@@ -57,11 +80,6 @@ export function SiteHeader({ variant = "landing" }: SiteHeaderProps) {
                 Comprar entradas
               </a>
             </>
-          )}
-          {variant === "plain" && (
-            <Link href="/eventos/neon" className="text-sm font-bold">
-              Ver evento
-            </Link>
           )}
         </nav>
         <button
@@ -75,38 +93,35 @@ export function SiteHeader({ variant = "landing" }: SiteHeaderProps) {
       </div>
       {open && (
         <div className={`flex flex-col gap-3 px-5 pb-4 md:hidden ${dark ? "text-cream" : "text-ink"}`}>
-          {variant === "landing" && (
+          {(variant === "home" || variant === "plain") && (
+            <>
+              <a href="#eventos" onClick={() => setOpen(false)} className="text-sm font-bold">
+                Eventos
+              </a>
+              <Link href="/login" className="text-sm font-bold">
+                Iniciar sesión
+              </Link>
+              <Link href="/organizadores" className="text-sm font-bold">
+                Soy organizador
+              </Link>
+            </>
+          )}
+          {isLanding && (
             <>
               <a href="#como-funciona" onClick={() => setOpen(false)} className="text-sm font-bold">
                 Cómo funciona
               </a>
-              <a href="#fidelizacion" onClick={() => setOpen(false)} className="text-sm font-bold">
-                RRPP y fidelización
-              </a>
-              <Link href="/organizador" className="text-sm font-bold">
-                Organizador
-              </Link>
-              <Link
-                href="/organizador/nuevo"
-                className="rounded bg-coral px-5 py-3 text-center text-sm font-extrabold text-white"
-              >
+              <Link href="/organizador/nuevo" className="text-sm font-bold">
                 Sumar mi evento
               </Link>
             </>
           )}
           {variant === "event" && (
             <>
-              <Link href="/organizador" className="text-sm font-bold">
-                Organizador
+              <Link href="/" className="text-sm font-bold">
+                Eventos
               </Link>
-              <Link href="/login" className="text-sm font-bold">
-                Iniciar sesión
-              </Link>
-              <a
-                href="#tickets"
-                onClick={() => setOpen(false)}
-                className="rounded bg-coral px-5 py-3 text-center text-sm font-extrabold text-white"
-              >
+              <a href="#tickets" onClick={() => setOpen(false)} className="text-sm font-bold">
                 Comprar entradas
               </a>
             </>

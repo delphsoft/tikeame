@@ -20,7 +20,7 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "Tikeame — Tu plata. Tu evento. Tu tiko.",
+    default: "Tikeame — El tikeame que te lleva a la fiesta.",
     template: "%s · Tikeame",
   },
   description: site.description,

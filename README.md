@@ -15,15 +15,14 @@ Este repo es el prototipo navegable armado a partir de las pantallas de Tiko (la
 
 ## Flujo demo
 
-1. Landing de productoras → `/`
-2. Evento público NEÓN → `/eventos/neon`
-3. Checkout (Mercado Pago simulado) → `/checkout`
-4. Confirmación + QR → `/confirmacion`
-5. Panel organizador (crear eventos) → `/organizador`
-6. Nuevo evento → `/organizador/nuevo`
-7. Check-in en puerta → `/organizador/checkin`
-8. Ranking RRPP → `/organizador/rrpp`
-9. Super admin → `/admin`
+1. Home de quien va al evento → `/`
+2. 4 fondos animados del hero → `/fondos`
+3. Landing de organizadores → `/organizadores`
+4. Evento público NEÓN → `/eventos/neon`
+5. Checkout (Mercado Pago simulado) → `/checkout`
+6. Confirmación + QR → `/confirmacion`
+7. Panel organizador (crear eventos) → `/organizador`
+8. Super admin → `/admin`
 
 El login no valida credenciales. Las compras y el scanner viven en el cliente (sessionStorage).
 

@@ -7,9 +7,18 @@ export function Footer() {
         <Logo href="/" light size="sm" />
         <span className="text-xs font-semibold text-lilac">© 2026</span>
       </div>
-      <p className="text-xs text-lilac">
-        Pagos vía Mercado Pago Marketplace. Tikeame nunca custodia fondos.
-      </p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-lilac">
+        <a href="/legal/terminos" className="font-bold text-muted2">
+          Términos
+        </a>
+        <a href="/legal/privacidad" className="font-bold text-muted2">
+          Privacidad
+        </a>
+        <a href="/legal/arrepentimiento" className="font-bold text-muted2">
+          Arrepentimiento
+        </a>
+        <span>Pagos vía Mercado Pago. Tikeame nunca custodia fondos.</span>
+      </div>
     </footer>
   );
 }

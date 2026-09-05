@@ -29,7 +29,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export async function generateStaticParams() {
-  return [{ slug: "neon" }, { slug: "bass-night" }, { slug: "sunrise-open-air" }, { slug: "techno-underground" }];
+  return [
+    { slug: "neon" },
+    { slug: "bass-night" },
+    { slug: "sunrise-open-air" },
+    { slug: "techno-underground" },
+    { slug: "cuarteto-live" },
+    { slug: "parana-bass" },
+    { slug: "andes-tech" },
+  ];
 }
 
 export default async function Page({ params }: Props) {

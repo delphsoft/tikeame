@@ -100,7 +100,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
-        <div className="fixed right-0 bottom-0 left-0 mx-auto max-w-[480px] border-t border-border bg-white px-5 pt-3.5 pb-6">
+        <div className="fixed right-0 bottom-[calc(var(--tabbar)+var(--safe-bottom))] left-0 mx-auto max-w-[480px] border-t border-border bg-white px-5 pt-3.5 pb-4 md:bottom-0 md:pb-6">
           <button
             type="button"
             onClick={pay}

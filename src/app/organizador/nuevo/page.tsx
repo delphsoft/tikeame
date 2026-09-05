@@ -90,6 +90,9 @@ export default function NuevoEventoPage() {
       organizerId: "tiko",
       organizerName: "Tiko Producciones",
       featured: false,
+      cityId: "caba",
+      lat: -34.6037,
+      lng: -58.3816,
       tickets: parsed,
     });
     router.push(`/organizador/${slugPreview}`);

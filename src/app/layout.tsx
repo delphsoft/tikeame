@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Manrope } from "next/font/google";
 import { JsonLd } from "@/components/JsonLd";
+import { AppTabs } from "@/components/AppTabs";
 import { CartProvider } from "@/lib/cart";
 import { EventsProvider } from "@/lib/events";
+import { SessionProvider } from "@/lib/session";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -53,13 +55,14 @@ export const metadata: Metadata = {
     description: site.description,
   },
   icons: { icon: "/icon" },
-  appleWebApp: { capable: true, title: site.name, statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: site.name, statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
   themeColor: "#F4EEDC",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -69,7 +72,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={websiteJsonLd()} />
         <CartProvider>
-          <EventsProvider>{children}</EventsProvider>
+          <EventsProvider>
+            <SessionProvider>
+              <div className="app-shell">{children}</div>
+              <AppTabs />
+            </SessionProvider>
+          </EventsProvider>
         </CartProvider>
       </body>
     </html>

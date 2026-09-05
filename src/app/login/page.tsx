@@ -4,17 +4,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/Logo";
+import { useSession } from "@/lib/session";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useSession();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [role, setRole] = useState<"buyer" | "organizer" | "admin">("buyer");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const isRegister = mode === "register";
 
   function go() {
+    login({
+      name: name.trim() || "Guadalupe Fernández",
+      email: email.trim() || "hola@mail.com",
+      role,
+    });
     if (role === "admin") router.push("/admin");
     else if (role === "organizer") router.push("/organizador");
-    else router.push("/eventos/neon");
+    else router.push("/entradas");
   }
 
   return (
@@ -54,6 +63,8 @@ export default function LoginPage() {
               <span className="text-[11px] font-extrabold uppercase text-muted">Nombre</span>
               <input
                 type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Tu nombre"
                 className="mt-1.5 w-full rounded border-2 border-border px-3.5 py-[11px] text-sm text-ink placeholder:text-muted2"
               />
@@ -63,6 +74,8 @@ export default function LoginPage() {
             <span className="text-[11px] font-extrabold uppercase text-muted">Email</span>
             <input
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="nombre@mail.com"
               className="mt-1.5 w-full rounded border-2 border-border px-3.5 py-[11px] text-sm text-ink placeholder:text-muted2"
             />
@@ -106,7 +119,7 @@ export default function LoginPage() {
             {isRegister ? "Crear cuenta" : "Ingresar"}
           </button>
           <p className="mt-4 text-center text-xs text-muted">
-            Prototipo — no valida credenciales reales.
+            Guardamos la sesión en este dispositivo. Todavía no hay password real.
           </p>
         </div>
         <div className="mt-5 text-center">

@@ -78,7 +78,7 @@ export default function HomePage() {
             <div className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-coral">
               Próximos eventos
             </div>
-            <h2 className="mt-2 font-display text-3xl uppercase md:text-[38px]">Esta semana, esta ciudad.</h2>
+            <h2 className="mt-2 font-display text-3xl uppercase md:text-[38px]">Cerca tuyo.</h2>
           </div>
         </Reveal>
         <HomeEvents />

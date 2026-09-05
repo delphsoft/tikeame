@@ -24,7 +24,7 @@ export function HomeHero() {
         <div className="text-[13px] font-extrabold uppercase tracking-[0.18em] text-coral">
           Ticketera argentina
         </div>
-        <h1 className="mt-4 font-display text-5xl uppercase leading-[1.08] text-cream md:text-[72px]">
+        <h1 className="mt-3 font-display text-[42px] uppercase leading-[1.08] text-cream md:mt-4 md:text-[72px]">
           El tikeame
           <br />
           que te lleva
@@ -49,7 +49,7 @@ export function HomeHero() {
             NEÓN — 12 dic
           </Link>
         </div>
-        <Link href="/fondos" className="mt-6 inline-block text-xs font-bold text-muted2">
+        <Link href="/fondos" className="mt-6 hidden text-xs font-bold text-muted2 md:inline-block">
           Fondo {fondo.toUpperCase()} · ver las 4 alternativas →
         </Link>
       </div>

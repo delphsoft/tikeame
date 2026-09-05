@@ -42,7 +42,7 @@ export function HeroMotion({
     <section
       className={`relative overflow-hidden ${
         tall
-          ? "flex min-h-[92vh] flex-col justify-end px-5 pb-16 md:px-12 md:pb-20"
+          ? "flex min-h-[68svh] flex-col justify-end px-5 pb-12 md:min-h-[92vh] md:px-12 md:pb-20"
           : "flex min-h-[420px] flex-col justify-end px-6 py-10 md:min-h-[520px]"
       }`}
     >

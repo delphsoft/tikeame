@@ -82,14 +82,16 @@ export function SiteHeader({ variant = "home" }: SiteHeaderProps) {
             </>
           )}
         </nav>
-        <button
-          type="button"
-          className={`md:hidden text-sm font-extrabold ${dark ? "text-cream" : "text-ink"}`}
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Menú"
-        >
-          {open ? "Cerrar" : "Menú"}
-        </button>
+        {isLanding && (
+          <button
+            type="button"
+            className={`md:hidden text-sm font-extrabold ${dark ? "text-cream" : "text-ink"}`}
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Menú"
+          >
+            {open ? "Cerrar" : "Menú"}
+          </button>
+        )}
       </div>
       {open && (
         <div className={`flex flex-col gap-3 px-5 pb-4 md:hidden ${dark ? "text-cream" : "text-ink"}`}>

@@ -16,6 +16,8 @@ export default function robots(): MetadataRoute.Robots {
           "/rrpp",
           "/login",
           "/fondos",
+          "/entradas",
+          "/cuenta",
         ],
       },
     ],

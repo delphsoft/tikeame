@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { EVENT, TICKET_TIERS, type TicketKey } from "./data";
+import { CITIES, type CityId } from "./geo";
 
 export type EventStatus = "draft" | "on_sale" | "paused" | "sold_out";
 
@@ -42,6 +43,9 @@ export type ManagedEvent = {
   organizerId: string;
   organizerName: string;
   featured: boolean;
+  cityId: CityId;
+  lat: number;
+  lng: number;
   tickets: EventTicket[];
 };
 
@@ -90,6 +94,9 @@ export const SEED_EVENTS: ManagedEvent[] = [
     organizerId: "tiko",
     organizerName: "Tiko Producciones",
     featured: true,
+    cityId: "caba",
+    lat: -34.5626,
+    lng: -58.4116,
     tickets: TICKET_TIERS.map((t) => ({
       key: t.key,
       name: t.name,
@@ -119,6 +126,9 @@ export const SEED_EVENTS: ManagedEvent[] = [
     organizerId: "tiko",
     organizerName: "Tiko Producciones",
     featured: false,
+    cityId: "caba",
+    lat: -34.583,
+    lng: -58.421,
     tickets: [
       { key: "early", name: "Early Bird", price: 5500, cap: 80, sold: 80, note: null },
       { key: "general", name: "General", price: 7500, cap: 220, sold: 94, note: null },
@@ -146,6 +156,9 @@ export const SEED_EVENTS: ManagedEvent[] = [
     organizerId: "costa",
     organizerName: "Costa Events",
     featured: false,
+    cityId: "caba",
+    lat: -34.57,
+    lng: -58.4,
     tickets: [
       { key: "early", name: "Early Bird", price: 9000, cap: 200, sold: 0, note: null },
       { key: "general", name: "General", price: 14000, cap: 800, sold: 0, note: null },
@@ -173,11 +186,104 @@ export const SEED_EVENTS: ManagedEvent[] = [
     organizerId: "pulse",
     organizerName: "Pulse BA",
     featured: false,
+    cityId: "caba",
+    lat: -34.5626,
+    lng: -58.4116,
     tickets: [
       { key: "early", name: "Early Bird", price: 7000, cap: 100, sold: 42, note: null },
       { key: "general", name: "General", price: 9500, cap: 350, sold: 120, note: null },
       { key: "vip", name: "VIP", price: 16000, cap: 80, sold: 18, note: null },
       { key: "parking", name: "General + Parking", price: 13000, cap: 30, sold: 6, note: null },
+    ],
+  },
+  {
+    slug: "cuarteto-live",
+    title: "CUARTETO LIVE",
+    subtitle: "Noche cordobesa",
+    category: "Cuarteto",
+    dateLabel: "Sáb 21 de nov",
+    timeLabel: "22:00",
+    dateISO: "2026-11-21",
+    venue: "Quality Espacio, Córdoba",
+    venueName: "Quality Espacio",
+    venueAddress: "Av. Rafael Núñez 4671, Córdoba",
+    mapsQuery: "Quality Espacio Cordoba",
+    about: "Una noche de cuarteto en Quality. Pista llena, sección VIP y estacionamiento.",
+    lineup: ["Ulises Bueno", "La Barra", "Q'Lokura"],
+    hero: "/gallery-3.jpg",
+    commissionPct: 3,
+    status: "on_sale",
+    organizerId: "tiko",
+    organizerName: "Tiko Producciones",
+    featured: false,
+    cityId: "cordoba",
+    lat: -31.375,
+    lng: -64.237,
+    tickets: [
+      { key: "early", name: "Early Bird", price: 8000, cap: 200, sold: 140, note: null },
+      { key: "general", name: "General", price: 11000, cap: 800, sold: 310, note: null },
+      { key: "vip", name: "VIP", price: 18000, cap: 120, sold: 44, note: null },
+      { key: "parking", name: "General + Parking", price: 14000, cap: 80, sold: 12, note: null },
+    ],
+  },
+  {
+    slug: "parana-bass",
+    title: "PARANÁ BASS",
+    subtitle: "Orilla electrónica",
+    category: "Bass",
+    dateLabel: "Vie 4 de dic",
+    timeLabel: "23:30",
+    dateISO: "2026-12-04",
+    venue: "Metropolitano, Rosario",
+    venueName: "Metropolitano",
+    venueAddress: "Av. Circunvalación, Rosario",
+    mapsQuery: "Metropolitano Rosario",
+    about: "Bass y breaks a orillas del Paraná. Sound system propio.",
+    lineup: ["Bizarrap DJ set", "Nick León", "Njie"],
+    hero: "/gallery-4.jpg",
+    commissionPct: 3,
+    status: "on_sale",
+    organizerId: "pulse",
+    organizerName: "Pulse BA",
+    featured: false,
+    cityId: "rosario",
+    lat: -32.9442,
+    lng: -60.6505,
+    tickets: [
+      { key: "early", name: "Early Bird", price: 7000, cap: 100, sold: 100, note: null },
+      { key: "general", name: "General", price: 9000, cap: 400, sold: 180, note: null },
+      { key: "vip", name: "VIP", price: 15000, cap: 60, sold: 22, note: null },
+      { key: "parking", name: "General + Parking", price: 12000, cap: 40, sold: 8, note: null },
+    ],
+  },
+  {
+    slug: "andes-tech",
+    title: "ANDES TECH",
+    subtitle: "Bodega + techno",
+    category: "Techno",
+    dateLabel: "Sáb 30 de ene",
+    timeLabel: "21:00",
+    dateISO: "2027-01-30",
+    venue: "Bodega, Maipú",
+    venueName: "Bodega Maipú",
+    venueAddress: "Maipú, Mendoza",
+    mapsQuery: "Maipu Mendoza bodega",
+    about: "Techno al pie de la cordillera. Open air hasta el amanecer.",
+    lineup: ["Amelie Lens", "I Hate Models B2B"],
+    hero: "/gallery-5.jpg",
+    commissionPct: 4,
+    status: "on_sale",
+    organizerId: "costa",
+    organizerName: "Costa Events",
+    featured: false,
+    cityId: "mendoza",
+    lat: -32.984,
+    lng: -68.788,
+    tickets: [
+      { key: "early", name: "Early Bird", price: 12000, cap: 150, sold: 90, note: null },
+      { key: "general", name: "General", price: 16000, cap: 500, sold: 210, note: null },
+      { key: "vip", name: "VIP", price: 24000, cap: 80, sold: 30, note: "cata" },
+      { key: "parking", name: "General + Parking", price: 19000, cap: 60, sold: 14, note: null },
     ],
   },
 ];
@@ -294,8 +400,15 @@ export function EventsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const events = useMemo(() => {
+    const caba = CITIES[0];
     const merged = [...created, ...SEED_EVENTS.filter((s) => !created.some((c) => c.slug === s.slug))];
-    return merged.map((e) => (statusMap[e.slug] ? { ...e, status: statusMap[e.slug] } : e));
+    return merged.map((e) => ({
+      ...e,
+      cityId: e.cityId ?? "caba",
+      lat: e.lat ?? caba.lat,
+      lng: e.lng ?? caba.lng,
+      status: statusMap[e.slug] ?? e.status,
+    }));
   }, [created, statusMap]);
 
   const mine = useMemo(() => events.filter((e) => e.organizerId === "tiko"), [events]);

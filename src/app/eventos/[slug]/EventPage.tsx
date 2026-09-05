@@ -81,7 +81,7 @@ export function EventPage({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-cream pb-[110px]">
+    <div className="min-h-screen bg-cream pb-28 md:pb-[110px]">
       <SiteHeader variant="event" />
 
       <HeroParallax src={event.hero} alt={`${event.title} — ${event.subtitle}`} minHeight="event">
@@ -403,7 +403,7 @@ export function EventPage({ slug }: { slug: string }) {
         </div>
       </div>
 
-      <div className="fixed right-0 bottom-0 left-0 z-40 flex items-center justify-between gap-4 bg-ink px-5 py-3.5 shadow-[0_-8px_24px_rgba(0,0,0,0.18)] md:px-10">
+      <div className="fixed right-0 bottom-[calc(var(--tabbar)+var(--safe-bottom))] left-0 z-40 flex items-center justify-between gap-4 bg-ink px-5 py-3.5 shadow-[0_-8px_24px_rgba(0,0,0,0.18)] md:bottom-0 md:px-10">
         <div>
           <div className="text-[11px] text-muted2">{itemCount} entradas</div>
           <div className="text-lg font-extrabold text-cream">{fmtARS(total)}</div>

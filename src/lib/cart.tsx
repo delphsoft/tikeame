@@ -55,6 +55,8 @@ function totalsFrom(qty: Qty) {
 
 type CartContextValue = {
   qty: Qty;
+  eventSlug: string;
+  setEventSlug: (slug: string) => void;
   setQty: (next: Qty | ((prev: Qty) => Qty)) => void;
   inc: (key: TicketKey) => void;
   dec: (key: TicketKey) => void;
@@ -63,14 +65,18 @@ type CartContextValue = {
   total: number;
   itemCount: number;
   order: Order | null;
+  setOrder: (order: Order | null) => void;
   placeOrder: (buyerName?: string) => Order;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 
+const SLUG_KEY = "tikeame-event-slug";
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [qty, setQtyState] = useState<Qty>(DEFAULT_QTY);
-  const [order, setOrder] = useState<Order | null>(null);
+  const [eventSlug, setEventSlugState] = useState("neon");
+  const [order, setOrderState] = useState<Order | null>(null);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -78,7 +84,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const raw = sessionStorage.getItem(CART_KEY);
         if (raw) setQtyState(JSON.parse(raw) as Qty);
         const rawOrder = sessionStorage.getItem(ORDER_KEY);
-        if (rawOrder) setOrder(JSON.parse(rawOrder) as Order);
+        if (rawOrder) setOrderState(JSON.parse(rawOrder) as Order);
+        const slug = sessionStorage.getItem(SLUG_KEY);
+        if (slug) setEventSlugState(slug);
       } catch {
         /* ignore */
       }
@@ -123,26 +131,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       }
       const next: Order = { id, items, subtotal, fee, total, tickets, buyerName };
-      setOrder(next);
+      setOrderState(next);
       sessionStorage.setItem(ORDER_KEY, JSON.stringify(next));
       return next;
     },
     [qty],
   );
 
+  const setEventSlug = useCallback((slug: string) => {
+    setEventSlugState(slug);
+    sessionStorage.setItem(SLUG_KEY, slug);
+  }, []);
+
+  const setOrder = useCallback((next: Order | null) => {
+    setOrderState(next);
+    if (next) sessionStorage.setItem(ORDER_KEY, JSON.stringify(next));
+  }, []);
+
   const totals = useMemo(() => totalsFrom(qty), [qty]);
 
   const value = useMemo(
     () => ({
       qty,
+      eventSlug,
+      setEventSlug,
       setQty,
       inc,
       dec,
       ...totals,
       order,
+      setOrder,
       placeOrder,
     }),
-    [qty, setQty, inc, dec, totals, order, placeOrder],
+    [qty, eventSlug, setEventSlug, setQty, inc, dec, totals, order, setOrder, placeOrder],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -32,10 +32,15 @@ export function EventPage({ slug }: { slug: string }) {
   const router = useRouter();
   const { getEvent, events } = useEvents();
   const event = getEvent(slug);
-  const { qty, inc, dec } = useCart();
+  const { qty, inc, dec, setEventSlug } = useCart();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const countdown = useCountdown(event ? new Date(`${event.dateISO}T${event.timeLabel}:00`) : new Date());
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setEventSlug(slug));
+    return () => cancelAnimationFrame(frame);
+  }, [slug, setEventSlug]);
 
   const tickets = event?.tickets ?? [];
   const subtotal = tickets.reduce((s, t) => s + qty[t.key] * t.price, 0);

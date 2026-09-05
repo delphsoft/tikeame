@@ -1,23 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OrganizerHeader } from "@/components/OrganizerHeader";
-import { SCAN_DEMO, scanStatusStyle } from "@/lib/data";
+import { scanStatusStyle } from "@/lib/data";
 
-type Scan = (typeof SCAN_DEMO)[number] & { id: number };
+type Scan = {
+  id: string;
+  ticketId: string;
+  name: string;
+  type: string;
+  status: "valid" | "used" | "invalid";
+  time: string;
+};
 
 export default function CheckinPage() {
+  const [code, setCode] = useState("");
   const [log, setLog] = useState<Scan[]>([]);
-  const [checkedIn, setCheckedIn] = useState(342);
-  const sold = 500;
+  const [checkedIn, setCheckedIn] = useState(0);
+  const [sold, setSold] = useState(0);
+  const [busy, setBusy] = useState(false);
   const last = log[0];
   const lastStyle = last ? scanStatusStyle(last.status) : null;
-  const pct = Math.round((checkedIn / sold) * 100);
+  const pct = sold ? Math.round((checkedIn / sold) * 100) : 0;
 
-  function runScan() {
-    const next = SCAN_DEMO[log.length % SCAN_DEMO.length];
-    setLog((prev) => [{ ...next, id: Date.now() }, ...prev].slice(0, 6));
-    if (next.status === "valid") setCheckedIn((n) => Math.min(sold, n + 1));
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      fetch("/api/checkin")
+        .then((r) => r.json())
+        .then((j) => {
+          setLog(j.scans ?? []);
+          setCheckedIn(j.checkedIn ?? 0);
+          setSold(j.sold ?? 0);
+        })
+        .catch(() => {});
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  async function scan(nextCode?: string) {
+    const value = (nextCode ?? code).trim();
+    if (!value) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: value }),
+      });
+      const j = (await res.json()) as { result?: Scan; checkedIn?: number; sold?: number };
+      if (j.result) setLog((prev) => [j.result!, ...prev].slice(0, 12));
+      if (typeof j.checkedIn === "number") setCheckedIn(j.checkedIn);
+      if (typeof j.sold === "number") setSold(j.sold);
+      setCode("");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -27,13 +64,13 @@ export default function CheckinPage() {
         <div className="rounded-2xl bg-ink px-7 py-[18px] text-cream">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="text-base font-extrabold">Check-in — NEÓN Fiesta Electrónica</div>
-              <div className="mt-0.5 text-xs text-muted2">Puerta principal</div>
+              <div className="text-base font-extrabold">Check-in</div>
+              <div className="mt-0.5 text-xs text-muted2">Escaneá o pegá el ID del QR</div>
             </div>
             <div className="text-right">
               <div className="text-[13px] text-muted2">Ingresados</div>
               <div className="text-xl font-extrabold text-teal">
-                {checkedIn} / {sold}
+                {checkedIn} / {sold || "—"}
               </div>
             </div>
           </div>
@@ -44,20 +81,28 @@ export default function CheckinPage() {
 
         <div className="mt-7 flex flex-col gap-6 lg:flex-row">
           <div className="flex flex-1 flex-col items-center justify-center gap-5 py-8">
-            <div className="flex size-[280px] items-center justify-center rounded-3xl border-[3px] border-dashed border-ink opacity-55">
-              <div className="px-6 text-center text-[13px] text-ink">
-                Apuntá la cámara
-                <br />
-                al código QR
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={runScan}
-              className="rounded-full bg-coral px-7 py-3.5 text-sm font-extrabold text-white"
+            <form
+              className="flex w-full max-w-sm flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                scan();
+              }}
             >
-              Simular escaneo
-            </button>
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="TK-…-1"
+                className="rounded-xl border-2 border-ink bg-white px-4 py-3 text-center text-sm font-bold"
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={busy || !code.trim()}
+                className="rounded-full bg-coral px-7 py-3.5 text-sm font-extrabold text-white disabled:opacity-50"
+              >
+                {busy ? "Validando…" : "Validar entrada"}
+              </button>
+            </form>
             {last && lastStyle && (
               <div
                 className="min-w-[280px] rounded-[14px] px-5 py-3.5 text-center"
@@ -74,12 +119,8 @@ export default function CheckinPage() {
             )}
           </div>
           <div className="flex w-full flex-col gap-2.5 overflow-auto rounded-2xl border border-border bg-white p-4 lg:w-[280px]">
-            <div className="text-xs font-extrabold uppercase tracking-wide text-ink">
-              Últimos escaneos
-            </div>
-            {log.length === 0 && (
-              <p className="text-xs text-muted">Todavía no hay escaneos en esta sesión.</p>
-            )}
+            <div className="text-xs font-extrabold uppercase tracking-wide text-ink">Últimos escaneos</div>
+            {log.length === 0 && <p className="text-xs text-muted">Todavía no hay escaneos en esta sesión.</p>}
             {log.map((row) => {
               const st = scanStatusStyle(row.status);
               return (

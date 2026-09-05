@@ -31,7 +31,8 @@ export default function CuentaPage() {
             <div className="mt-2 text-[11px] font-extrabold uppercase text-coral">{user.role}</div>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" });
                 logout();
                 router.push("/");
               }}

@@ -7,12 +7,18 @@ import { Logo } from "@/components/Logo";
 import { useCart } from "@/lib/cart";
 import { COMMISSION_PCT, TICKET_TIERS } from "@/lib/data";
 import { fmtARS } from "@/lib/money";
+import { useSession } from "@/lib/session";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { qty, subtotal, fee, total, itemCount, placeOrder } = useCart();
+  const { user } = useSession();
+  const { qty, eventSlug, itemCount, subtotal, fee, total, setOrder } = useCart();
   const [dni, setDni] = useState("");
   const [iva, setIva] = useState("Consumidor Final");
+  const [name, setName] = useState(user?.name ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   const lines = useMemo(
     () =>
@@ -23,10 +29,57 @@ export default function CheckoutPage() {
     [qty],
   );
 
-  function pay() {
+  async function pay() {
     if (itemCount === 0) return;
-    placeOrder();
-    router.push("/confirmacion");
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventSlug,
+          qty,
+          dni,
+          iva,
+          name,
+          email,
+        }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        orderId?: string;
+        checkoutUrl?: string;
+        mode?: string;
+      };
+      if (!res.ok || !data.orderId || !data.checkoutUrl) {
+        setError(data.error || "No se pudo iniciar el pago");
+        return;
+      }
+      if (data.mode === "mercadopago") {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+      setOrder({
+        id: data.orderId,
+        items: TICKET_TIERS.filter((t) => qty[t.key] > 0).map((t) => ({
+          key: t.key,
+          name: t.name,
+          qty: qty[t.key],
+          unitPrice: t.price,
+        })),
+        subtotal,
+        fee,
+        total,
+        tickets: [],
+        buyerName: name || "Comprador",
+      });
+      router.push(`/confirmacion?order=${encodeURIComponent(data.orderId)}`);
+    } catch {
+      setError("Error de red");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -37,7 +90,7 @@ export default function CheckoutPage() {
           <span className="text-xs font-bold text-muted">Checkout</span>
         </header>
         <div className="flex flex-1 flex-col gap-3.5 px-5 pb-32">
-          <Link href="/eventos/neon" className="text-[13px] font-bold text-muted">
+          <Link href={`/eventos/${eventSlug}`} className="text-[13px] font-bold text-muted">
             ← Volver al evento
           </Link>
           <div className="text-[12.5px] font-bold uppercase tracking-wide text-ink">Tu pedido</div>
@@ -72,6 +125,24 @@ export default function CheckoutPage() {
             El organizador recibe {fmtARS(subtotal)} — el 100% de lo que pagás por tu entrada.
           </div>
           <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold text-ink">Nombre</span>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="rounded-[10px] border border-border bg-white px-3.5 py-3 text-sm text-ink"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold text-ink">Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="para enviarte el QR"
+              className="rounded-[10px] border border-border bg-white px-3.5 py-3 text-sm text-ink"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold text-ink">DNI o CUIT</span>
             <input
               value={dni}
@@ -96,22 +167,23 @@ export default function CheckoutPage() {
             <div className="size-9 shrink-0 rounded-lg bg-ink" />
             <div>
               <div className="text-sm font-bold text-ink">Mercado Pago</div>
-              <div className="text-xs text-muted">Tarjeta, efectivo o dinero en cuenta</div>
+              <div className="text-xs text-muted">
+                Si hay MP_ACCESS_TOKEN, cobrás en Checkout Pro. Si no, se confirma en demo.
+              </div>
             </div>
           </div>
+          {error && <p className="text-sm font-bold text-coral">{error}</p>}
         </div>
         <div className="fixed right-0 bottom-[calc(var(--tabbar)+var(--safe-bottom))] left-0 mx-auto max-w-[480px] border-t border-border bg-white px-5 pt-3.5 pb-4 md:bottom-0 md:pb-6">
           <button
             type="button"
             onClick={pay}
-            disabled={itemCount === 0}
+            disabled={itemCount === 0 || busy}
             className="w-full rounded-full bg-coral py-[15px] text-[15px] font-extrabold text-white disabled:opacity-50"
           >
-            Pagar {fmtARS(total)}
+            {busy ? "Procesando…" : `Pagar ${fmtARS(total)}`}
           </button>
-          <div className="mt-2 text-center text-[11px] text-muted">
-            Pagás en Mercado Pago, sin salir de Tikeame.
-          </div>
+          <div className="mt-2 text-center text-[11px] text-muted">Pagás en Mercado Pago, sin salir de Tikeame.</div>
         </div>
       </div>
     </div>

@@ -13,17 +13,42 @@ export default function LoginPage() {
   const [role, setRole] = useState<"buyer" | "organizer" | "admin">("buyer");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const isRegister = mode === "register";
 
-  function go() {
-    login({
-      name: name.trim() || "Guadalupe Fernández",
-      email: email.trim() || "hola@mail.com",
-      role,
-    });
-    if (role === "admin") router.push("/admin");
-    else if (role === "organizer") router.push("/organizador");
-    else router.push("/entradas");
+  async function go() {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(isRegister ? "/api/auth/register" : "/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email: email || "hola@tikeame.com.ar",
+          password: password || "tikeame",
+          role,
+        }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        user?: { name: string; email: string; role: "buyer" | "organizer" | "admin" };
+      };
+      if (!res.ok || !data.user) {
+        setError(data.error || "No se pudo entrar");
+        return;
+      }
+      login(data.user);
+      if (data.user.role === "admin") router.push("/admin");
+      else if (data.user.role === "organizer") router.push("/organizador");
+      else router.push("/entradas");
+    } catch {
+      setError("Error de red");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -84,7 +109,9 @@ export default function LoginPage() {
             <span className="text-[11px] font-extrabold uppercase text-muted">Contraseña</span>
             <input
               type="password"
-              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="tikeame"
               className="mt-1.5 w-full rounded border-2 border-border px-3.5 py-[11px] text-sm text-ink placeholder:text-muted2"
             />
           </label>
@@ -114,12 +141,14 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={go}
-            className="mt-[18px] w-full rounded bg-coral py-3.5 text-sm font-extrabold text-white"
+            disabled={busy}
+            className="mt-[18px] w-full rounded bg-coral py-3.5 text-sm font-extrabold text-white disabled:opacity-50"
           >
-            {isRegister ? "Crear cuenta" : "Ingresar"}
+            {busy ? "…" : isRegister ? "Crear cuenta" : "Ingresar"}
           </button>
+          {error && <p className="mt-3 text-center text-sm font-bold text-coral">{error}</p>}
           <p className="mt-4 text-center text-xs text-muted">
-            Guardamos la sesión en este dispositivo. Todavía no hay password real.
+            Demo: hola@tikeame.com.ar / tikeame — o registrate. Cookie httpOnly en el servidor.
           </p>
         </div>
         <div className="mt-5 text-center">

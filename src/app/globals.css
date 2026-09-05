@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+:root {
+  --cream: #f4eedc;
+  --ink: #2b1d4a;
+  --coral: #ff6b5b;
+  --coral-hover: #e85445;
+  --teal: #3ec9a7;
+  --muted: #6b5d8a;
+  --muted2: #b9afd4;
+  --lilac: #8577a3;
+  --plum: #3a2a5c;
+  --border: #e4dcc8;
+  --paper: #ffffff;
+  --wash: #efebf7;
+}
+
+@theme inline {
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
+  --color-coral: var(--coral);
+  --color-coral-hover: var(--coral-hover);
+  --color-teal: var(--teal);
+  --color-muted: var(--muted);
+  --color-muted2: var(--muted2);
+  --color-lilac: var(--lilac);
+  --color-plum: var(--plum);
+  --color-border: var(--border);
+  --color-paper: var(--paper);
+  --color-wash: var(--wash);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-anton);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--coral);
+  color: var(--cream);
+}
+
+@keyframes hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+.hero-zoom {
+  animation: hero-zoom 18s ease-out infinite alternate;
+}
+
+.dot-grid {
+  background-image: radial-gradient(rgba(244, 238, 220, 0.12) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.dot-grid-ink {
+  background-image: radial-gradient(rgba(43, 29, 74, 0.08) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.ticket-holes::before,
+.ticket-holes::after {
+  content: "";
+  position: absolute;
+  top: 26px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--cream);
+}
+
+.ticket-holes::before {
+  left: -11px;
+  border-right: 2px solid var(--ink);
+}
+
+.ticket-holes::after {
+  right: -11px;
+  border-left: 2px solid var(--ink);
+}
+
+@media print {
+  header,
+  .no-print {
+    display: none !important;
+  }
+}

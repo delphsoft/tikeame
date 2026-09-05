@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
+import { site } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Para organizadores",
-  description:
-    "La plata de tus entradas, en tu cuenta al toque. Split Mercado Pago — Tikeame nunca custodia fondos.",
-};
+export const metadata: Metadata = pageMeta({
+  title: "Vendé entradas online",
+  description: site.organizerDescription,
+  path: "/organizadores",
+});
 
 export default function OrganizadoresLayout({ children }: { children: React.ReactNode }) {
   return children;

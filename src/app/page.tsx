@@ -1,10 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
+import { JsonLd } from "@/components/JsonLd";
 import { HomeEvents } from "@/components/HomeEvents";
 import { HomeHero } from "@/components/HomeHero";
 import { Perforation } from "@/components/Perforation";
 import { Reveal } from "@/components/Reveal";
 import { SiteHeader } from "@/components/SiteHeader";
+import { itemListJsonLd, pageMeta } from "@/lib/seo";
+import { site } from "@/lib/site";
+
+export const metadata: Metadata = pageMeta({
+  title: "Entradas para fiestas y eventos",
+  absoluteTitle: "Tikeame | Entradas para fiestas y eventos en Argentina",
+  description: site.description,
+  path: "/",
+});
 
 const steps = [
   {
@@ -33,6 +44,7 @@ const steps = [
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-cream">
+      <JsonLd data={itemListJsonLd()} />
       <SiteHeader variant="home" />
       <HomeHero />
       <Perforation />

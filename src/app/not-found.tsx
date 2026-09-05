@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { noIndex } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Página no encontrada",
+  ...noIndex,
+};
 
 export default function NotFound() {
   return (

@@ -1,26 +1,25 @@
 import type { MetadataRoute } from "next";
+import { PUBLIC_EVENTS } from "@/lib/public-events";
 import { site } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const paths = [
-    "/",
-    "/organizadores",
-    "/fondos",
-    "/login",
-    "/eventos/neon",
-    "/checkout",
-    "/organizador",
-    "/organizador/nuevo",
-    "/organizador/neon",
-    "/organizador/checkin",
-    "/organizador/rrpp",
-    "/admin",
-    "/rrpp",
-    "/rrpp/embajador",
-    "/rrpp/invitacion",
+  const now = new Date("2026-09-05");
+  const pages: MetadataRoute.Sitemap = [
+    { url: site.url, lastModified: now, changeFrequency: "daily", priority: 1 },
+    {
+      url: `${site.url}/organizadores`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
   ];
-  return paths.map((path) => ({
-    url: `${site.url}${path}`,
-    lastModified: new Date("2026-09-04"),
+
+  const events = PUBLIC_EVENTS.filter((e) => e.indexable).map((e) => ({
+    url: `${site.url}/eventos/${e.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: e.slug === "neon" ? 0.9 : 0.7,
   }));
+
+  return [...pages, ...events];
 }

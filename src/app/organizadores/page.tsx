@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Footer } from "@/components/Footer";
+import { JsonLd } from "@/components/JsonLd";
 import { HeroParallax } from "@/components/HeroParallax";
 import { Perforation } from "@/components/Perforation";
 import { Reveal } from "@/components/Reveal";
 import { SiteHeader } from "@/components/SiteHeader";
+import { serviceJsonLd } from "@/lib/seo";
 
 const steps = [
   {
@@ -50,6 +52,7 @@ const rrpp = [
 export default function OrganizadoresPage() {
   return (
     <div className="min-h-screen bg-cream">
+      <JsonLd data={serviceJsonLd()} />
       <SiteHeader variant="organizers" />
 
       <HeroParallax src="/crowd-hero.avif">

@@ -26,6 +26,8 @@ Este repo es el prototipo navegable armado a partir de las pantallas de Tiko (la
 
 El login no valida credenciales. Las compras y el scanner viven en el cliente (sessionStorage).
 
+SEO: las páginas públicas (`/`, `/organizadores`, `/eventos/*`) tienen title, description, canonical, Open Graph y JSON-LD. Paneles, checkout y `/fondos` van con `noindex`.
+
 ## Desarrollo
 
 ```bash

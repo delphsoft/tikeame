@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Manrope } from "next/font/google";
+import { JsonLd } from "@/components/JsonLd";
 import { CartProvider } from "@/lib/cart";
 import { EventsProvider } from "@/lib/events";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -20,18 +22,38 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "Tikeame — El tikeame que te lleva a la fiesta.",
+    default: "Tikeame | Entradas para fiestas y eventos en Argentina",
     template: "%s · Tikeame",
   },
   description: site.description,
-  applicationName: "Tikeame",
+  applicationName: site.name,
+  keywords: site.keywords,
+  authors: [{ name: site.name, url: site.url }],
+  creator: site.name,
+  publisher: site.name,
+  category: "tickets",
+  formatDetection: { telephone: false, email: false, address: false },
+  alternates: { canonical: site.url },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+  },
   openGraph: {
-    title: "Tikeame — Ticketera argentina",
+    title: "Tikeame | Entradas para fiestas y eventos en Argentina",
     description: site.description,
     type: "website",
-    locale: "es_AR",
+    locale: site.locale,
     url: site.url,
+    siteName: site.name,
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tikeame | Entradas para fiestas y eventos en Argentina",
+    description: site.description,
+  },
+  icons: { icon: "/icon" },
+  appleWebApp: { capable: true, title: site.name, statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -44,6 +66,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es-AR" className={`${anton.variable} ${manrope.variable} h-full antialiased`}>
       <body className="min-h-full bg-cream font-sans text-ink">
+        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={websiteJsonLd()} />
         <CartProvider>
           <EventsProvider>{children}</EventsProvider>
         </CartProvider>

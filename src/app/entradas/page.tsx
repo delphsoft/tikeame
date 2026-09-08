@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
-import { qrUrl } from "@/lib/data";
+import { qrSrc } from "@/lib/data";
 
 type Row = { id: string; name: string; status?: string };
 
@@ -52,7 +52,7 @@ export default function EntradasPage() {
               className="flex items-center gap-3 rounded-2xl bg-ink p-3.5"
             >
               <Image
-                src={qrUrl(t.id, 120)}
+                src={qrSrc(t.id)}
                 alt={`QR ${t.name}`}
                 width={72}
                 height={72}

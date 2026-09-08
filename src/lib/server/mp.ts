@@ -1,7 +1,38 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { site } from "@/lib/site";
 
 export function mpEnabled() {
   return Boolean(process.env.MP_ACCESS_TOKEN);
+}
+
+/** Live origin for MP redirects/webhooks. Use vercel.app until nic.ar DNS is live. */
+function mpPublicUrl() {
+  const explicit = process.env.MP_PUBLIC_URL?.replace(/\/$/, "");
+  if (explicit) return explicit;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  return site.url;
+}
+
+export function verifyMpSignature(req: Request, dataId: string) {
+  const secret = process.env.MP_WEBHOOK_SECRET;
+  if (!secret) return true;
+  const signature = req.headers.get("x-signature") || "";
+  const requestId = req.headers.get("x-request-id") || "";
+  const ts = /ts=([^,]+)/.exec(signature)?.[1];
+  const v1 = /v1=([^,]+)/.exec(signature)?.[1];
+  if (!ts || !v1) return false;
+  const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const expected = createHmac("sha256", secret).update(manifest).digest("hex");
+  try {
+    const a = Buffer.from(v1, "hex");
+    const b = Buffer.from(expected, "hex");
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
 
 export async function createPreference(input: {
@@ -25,14 +56,14 @@ export async function createPreference(input: {
     ],
     payer: { email: input.email },
     external_reference: input.orderId,
-    statement_descriptor: "TIKEAME",
+    statement_descriptor: "TICKEAME",
     back_urls: {
-      success: `${site.url}/api/mp/return?status=success`,
-      failure: `${site.url}/api/mp/return?status=failure`,
-      pending: `${site.url}/api/mp/return?status=pending`,
+      success: `${mpPublicUrl()}/api/mp/return?status=success`,
+      failure: `${mpPublicUrl()}/api/mp/return?status=failure`,
+      pending: `${mpPublicUrl()}/api/mp/return?status=pending`,
     },
     auto_return: "approved",
-    notification_url: process.env.MP_WEBHOOK_URL || `${site.url}/api/mp/webhook`,
+    notification_url: process.env.MP_WEBHOOK_URL || `${mpPublicUrl()}/api/mp/webhook`,
     metadata: { orderId: input.orderId },
   };
 

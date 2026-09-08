@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { OrganizerHeader } from "@/components/OrganizerHeader";
 import { scanStatusStyle } from "@/lib/data";
@@ -14,6 +15,7 @@ type Scan = {
 };
 
 export default function CheckinPage() {
+  const router = useRouter();
   const [code, setCode] = useState("");
   const [log, setLog] = useState<Scan[]>([]);
   const [checkedIn, setCheckedIn] = useState(0);
@@ -26,8 +28,12 @@ export default function CheckinPage() {
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       fetch("/api/checkin")
-        .then((r) => r.json())
-        .then((j) => {
+        .then(async (r) => {
+          if (r.status === 401 || r.status === 403) {
+            router.replace("/login");
+            return;
+          }
+          const j = (await r.json()) as { scans?: Scan[]; checkedIn?: number; sold?: number };
           setLog(j.scans ?? []);
           setCheckedIn(j.checkedIn ?? 0);
           setSold(j.sold ?? 0);
@@ -35,7 +41,7 @@ export default function CheckinPage() {
         .catch(() => {});
     });
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [router]);
 
   async function scan(nextCode?: string) {
     const value = (nextCode ?? code).trim();
@@ -47,7 +53,11 @@ export default function CheckinPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: value }),
       });
-      const j = (await res.json()) as { result?: Scan; checkedIn?: number; sold?: number };
+      const j = (await res.json()) as { result?: Scan; checkedIn?: number; sold?: number; error?: string };
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/login");
+        return;
+      }
       if (j.result) setLog((prev) => [j.result!, ...prev].slice(0, 12));
       if (typeof j.checkedIn === "number") setCheckedIn(j.checkedIn);
       if (typeof j.sold === "number") setSold(j.sold);

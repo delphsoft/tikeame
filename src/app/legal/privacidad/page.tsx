@@ -13,7 +13,7 @@ export default function Page() {
     <LegalLayout title="Privacidad">
       <p>Tratamos nombre, email, DNI/CUIT y datos de compra para emitir tu entrada y cumplir obligaciones fiscales de la productora.</p>
       <p>La ubicación del dispositivo se usa solo en el browser, para ordenar “próximos eventos” cerca tuyo. No la mandamos a un servidor si no comprás.</p>
-      <p>No vendemos padrones. Podés pedir acceso o baja a hola@tikeame.com.ar, según la Ley 25.326.</p>
+      <p>No vendemos padrones. Podés pedir acceso o baja a hola@tickeame.com.ar, según la Ley 25.326.</p>
     </LegalLayout>
   );
 }

@@ -3,66 +3,103 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
-import { useCart } from "@/lib/cart";
-import { EVENT, qrUrl } from "@/lib/data";
+import { qrSrc } from "@/lib/data";
+
+type TicketView = {
+  id: string;
+  name: string;
+  eventTitle?: string;
+  eventDate?: string;
+  venue?: string;
+  buyerName?: string;
+  orderId?: string;
+};
 
 function TicketInner() {
   const params = useSearchParams();
-  const { order } = useCart();
   const id = params.get("id");
-  const tickets = order?.tickets ?? [
-    { id: "TK-4F2A-91", name: "General", key: "general" as const },
-  ];
-  const ticket = tickets.find((t) => t.id === id) ?? tickets[0];
-  const index = tickets.findIndex((t) => t.id === ticket.id);
-  const code = ticket.id.length > 12 ? ticket.id : "TK-4F2A-91";
-  const buyer = order?.buyerName ?? "Guadalupe Fernández";
+  const orderId = params.get("order");
+  const token = params.get("t");
+  const [ticket, setTicket] = useState<TicketView | null>(null);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const load = orderId
+        ? fetch(`/api/orders/${encodeURIComponent(orderId)}${token ? `?t=${encodeURIComponent(token)}` : ""}`).then(
+            async (r) => {
+              const j = (await r.json()) as {
+                error?: string;
+                order?: { id: string; eventTitle: string; eventDate: string; venue: string; buyerName: string };
+                tickets?: { id: string; name: string }[];
+              };
+              if (j.error || !j.order) throw new Error(j.error || "No encontrada");
+              const row = j.tickets?.find((t) => t.id === id) ?? j.tickets?.[0];
+              if (!row) throw new Error("Entrada no encontrada");
+              return {
+                id: row.id,
+                name: row.name,
+                eventTitle: j.order.eventTitle,
+                eventDate: j.order.eventDate,
+                venue: j.order.venue,
+                buyerName: j.order.buyerName,
+                orderId: j.order.id,
+              } satisfies TicketView;
+            },
+          )
+        : fetch("/api/me/tickets").then(async (r) => {
+            const j = (await r.json()) as { tickets?: TicketView[] };
+            const row = j.tickets?.find((t) => t.id === id) ?? j.tickets?.[0] ?? null;
+            if (!row) throw new Error("Entrá a tu cuenta para ver esta entrada.");
+            return row;
+          });
+
+      load.then(setTicket).catch((e: unknown) => setErr(e instanceof Error ? e.message : "No se pudo cargar"));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [id, orderId, token]);
 
   return (
     <div className="min-h-screen bg-cream">
       <div className="mx-auto max-w-[420px] px-5 py-6">
         <div className="mb-4 flex items-center justify-between">
           <Logo href="/" size="sm" />
-          <Link href="/confirmacion" className="text-xs font-bold text-muted">
+          <Link href="/entradas" className="text-xs font-bold text-muted">
             ← Mis entradas
           </Link>
         </div>
-        <div className="overflow-hidden rounded-[20px] bg-ink">
-          <div className="px-5 pt-5 pb-4">
-            <div className="text-[11px] font-bold uppercase tracking-wide text-teal">Válido</div>
-            <div className="mt-1 text-[19px] font-extrabold text-cream">{EVENT.fullName}</div>
-            <div className="mt-1 text-[13px] text-muted2">
-              {EVENT.dateLabel} · {EVENT.timeLabel} · {EVENT.venue}
+        {err && <p className="text-sm font-bold text-coral">{err}</p>}
+        {ticket && (
+          <div className="overflow-hidden rounded-[20px] bg-ink">
+            <div className="px-5 pt-5 pb-4">
+              <div className="text-[11px] font-bold uppercase tracking-wide text-teal">Válido</div>
+              <div className="mt-1 text-[19px] font-extrabold text-cream">{ticket.eventTitle || "Tikeame"}</div>
+              <div className="mt-1 text-[13px] text-muted2">
+                {[ticket.eventDate, ticket.venue].filter(Boolean).join(" · ")}
+              </div>
+            </div>
+            <div className="flex justify-center bg-cream p-6">
+              <Image
+                src={qrSrc(ticket.id, { orderId: ticket.orderId || orderId || undefined, token: token || undefined })}
+                alt="Código QR"
+                width={200}
+                height={200}
+                unoptimized
+                className="rounded-xl bg-white p-2"
+              />
+            </div>
+            <div className="flex flex-col gap-2.5 px-5 py-5">
+              <Row label="Titular" value={ticket.buyerName || "—"} />
+              <Row label="Tipo" value={ticket.name} />
+              <Row label="Código" value={ticket.id} />
             </div>
           </div>
-          <div className="flex justify-center bg-cream p-6">
-            <Image
-              src={qrUrl(ticket.id, 200)}
-              alt="Código QR"
-              width={200}
-              height={200}
-              unoptimized
-              className="rounded-xl bg-white p-2"
-            />
-          </div>
-          <div className="flex flex-col gap-2.5 px-5 py-5">
-            <Row label="Titular" value={buyer} />
-            <Row label="Tipo" value={ticket.name} />
-            <Row label="Entrada" value={`${index + 1} de ${tickets.length}`} />
-            <Row label="Código" value={code} />
-          </div>
-        </div>
+        )}
         <p className="mt-4 text-center text-xs leading-normal text-muted">
           Válida para un solo ingreso. Se invalida apenas se escanea en la puerta.
         </p>
-        <button
-          type="button"
-          className="mt-4 w-full rounded-full border border-border bg-white py-3.5 text-sm font-extrabold text-ink"
-        >
-          Agregar a Wallet
-        </button>
       </div>
     </div>
   );

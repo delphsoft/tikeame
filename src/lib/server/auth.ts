@@ -1,31 +1,14 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { authenticate, createUser, db, findUserByEmail, type Role, type User } from "./store";
-
-const COOKIE = "tikeame_session";
-
-function secret() {
-  return process.env.SESSION_SECRET || process.env.ADMIN_PASSWORD || "tikeame-dev-secret-change-me";
-}
-
-function sign(userId: string) {
-  return `${userId}.${createHmac("sha256", secret()).update(userId).digest("hex")}`;
-}
-
-function verify(token: string | undefined) {
-  if (!token || !token.includes(".")) return null;
-  const userId = token.slice(0, token.indexOf("."));
-  const expected = sign(userId);
-  const a = Buffer.from(token);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return null;
-  if (!timingSafeEqual(a, b)) return null;
-  return userId;
-}
+import { ConfigError } from "./env";
+import { getSessionSecret, SESSION_COOKIE, signSession, verifySession } from "./session-token";
+import { authenticate, createUser, findUserByEmail, findUserById, type Role, type User } from "./store";
 
 export async function setSession(user: User) {
+  if (!getSessionSecret()) {
+    throw new ConfigError("Falta SESSION_SECRET en Vercel (mínimo 16 caracteres).");
+  }
   const jar = await cookies();
-  jar.set(COOKIE, sign(user.id), {
+  jar.set(SESSION_COOKIE, signSession(user.id), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -36,14 +19,18 @@ export async function setSession(user: User) {
 
 export async function clearSession() {
   const jar = await cookies();
-  jar.delete(COOKIE);
+  jar.delete(SESSION_COOKIE);
 }
 
 export async function currentUser(): Promise<User | null> {
   const jar = await cookies();
-  const userId = verify(jar.get(COOKIE)?.value);
+  const userId = verifySession(jar.get(SESSION_COOKIE)?.value);
   if (!userId) return null;
-  return db().users.find((u) => u.id === userId) ?? null;
+  try {
+    return (await findUserById(userId)) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export { authenticate, createUser, findUserByEmail };

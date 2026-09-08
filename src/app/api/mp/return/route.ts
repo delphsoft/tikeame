@@ -15,15 +15,15 @@ export async function GET(req: Request) {
     const payment = await getPayment(paymentId);
     if (payment?.external_reference) orderId = payment.external_reference;
     if (payment && orderId) {
-      const order = getOrder(orderId);
+      const order = await getOrder(orderId);
       if (order) {
         order.mpPaymentId = String(payment.id);
         if (payment.status === "approved") {
           order.status = "paid";
-          putOrder(order);
+          await putOrder(order);
           await fulfillOrder(order.id);
         } else {
-          putOrder(order);
+          await putOrder(order);
         }
       }
     }
@@ -32,6 +32,14 @@ export async function GET(req: Request) {
   if (status === "failure") {
     return NextResponse.redirect(new URL(`/checkout?error=pago`, site.url));
   }
-  const dest = orderId ? `/confirmacion?order=${encodeURIComponent(orderId)}` : "/confirmacion";
+
+  let token = "";
+  if (orderId) {
+    const order = await getOrder(orderId);
+    token = order?.viewToken || "";
+  }
+  const dest = orderId
+    ? `/confirmacion?order=${encodeURIComponent(orderId)}${token ? `&t=${encodeURIComponent(token)}` : ""}`
+    : "/confirmacion";
   return NextResponse.redirect(new URL(dest, site.url));
 }

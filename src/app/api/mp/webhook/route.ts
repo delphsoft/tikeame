@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fulfillOrder } from "@/lib/server/fulfill";
-import { getPayment } from "@/lib/server/mp";
+import { getPayment, verifyMpSignature } from "@/lib/server/mp";
 import { getOrder, putOrder } from "@/lib/server/store";
 
 export async function POST(req: Request) {
@@ -20,22 +20,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  if (!verifyMpSignature(req, String(dataId))) {
+    return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
+  }
+
   const payment = await getPayment(String(dataId));
   if (!payment?.external_reference) return NextResponse.json({ ok: true });
 
-  const order = getOrder(payment.external_reference);
+  const order = await getOrder(payment.external_reference);
   if (!order) return NextResponse.json({ ok: true });
 
   order.mpPaymentId = String(payment.id);
   if (payment.status === "approved") {
     order.status = "paid";
-    putOrder(order);
+    await putOrder(order);
     await fulfillOrder(order.id);
   } else if (payment.status === "rejected" || payment.status === "cancelled") {
     order.status = "failed";
-    putOrder(order);
+    await putOrder(order);
   } else {
-    putOrder(order);
+    await putOrder(order);
   }
 
   return NextResponse.json({ ok: true });

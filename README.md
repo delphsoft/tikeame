@@ -30,21 +30,29 @@ SEO: las páginas públicas (`/`, `/organizadores`, `/eventos/*`) tienen title, 
 
 ## Backend (lo que falta para cobrar en serio)
 
-Checkout pega a `/api/checkout`. Si hay `MP_ACCESS_TOKEN`, redirige a Mercado Pago Checkout Pro y el webhook `/api/mp/webhook` emite los QR. Si no hay token, confirma en **demo** (útil para probar check-in y entradas).
+Checkout pega a `/api/checkout`. En **local**, si no hay `MP_ACCESS_TOKEN`, confirma en demo y emite QR. En **Vercel** el demo-pay está apagado: hace falta Mercado Pago + Supabase + `SESSION_SECRET`.
 
 En Vercel / `.env.local`:
 
 ```
 MP_ACCESS_TOKEN=APP_USR-…   # o TEST-… para sandbox
-MP_WEBHOOK_URL=https://tikeame.com.ar/api/mp/webhook
+MP_PUBLIC_KEY=APP_USR-…     # public key Checkout Pro
+MP_PUBLIC_URL=https://tikeame.vercel.app
+MP_WEBHOOK_URL=https://tikeame.vercel.app/api/mp/webhook
+MP_WEBHOOK_SECRET=          # firma x-signature
 RESEND_API_KEY=re_…         # mail de entradas
-RESEND_FROM=Tikeame <hola@tikeame.com.ar>
-SESSION_SECRET=cambia-esto
+RESEND_FROM=Tickeame <hola@tickeame.com.ar>
+SESSION_SECRET=             # min 16 chars, obligatorio en Vercel
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+BOOTSTRAP_ADMIN_EMAIL=      # ese email, al registrarse, sale admin
 ```
 
-Usuarios demo: `hola@tikeame.com.ar`, `organizador@tikeame.com.ar`, `admin@tikeame.com.ar` / `tikeame`.
+Corrê `supabase/schema.sql` en el SQL editor del proyecto. RLS on, sin policies para anon.
 
-El check-in (`/organizador/checkin`) valida el ID del QR en el servidor y lo quema. En serverless de Vercel el JSON vive en `/tmp` (se pierde al frío): para persistir de verdad, conectá Supabase con `supabase/schema.sql`.
+Usuarios demo **solo en local**: `hola@tickeame.com.ar`, `organizador@tickeame.com.ar`, `admin@tickeame.com.ar` / `tikeame`.
+
+El check-in (`/organizador/checkin`) pide sesión de organizador o admin, valida el ID del QR y lo quema. Las órdenes se ven con la cookie del comprador o el `t` de la URL de confirmación. El QR lo genera Tikeame (`/api/qr/...`), no un tercero.
 
 ## Desarrollo
 

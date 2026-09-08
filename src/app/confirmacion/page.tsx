@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { useCart } from "@/lib/cart";
-import { qrUrl } from "@/lib/data";
+import { qrSrc } from "@/lib/data";
 import { fmtARS } from "@/lib/money";
 
 type Payload = {
@@ -27,13 +27,15 @@ function Inner() {
   const params = useSearchParams();
   const { order: local } = useCart();
   const orderId = params.get("order") || local?.id || "";
+  const viewToken = params.get("t") || "";
   const [data, setData] = useState<Payload | null>(null);
   const [err, setErr] = useState("");
 
   useEffect(() => {
     if (!orderId) return;
     const frame = requestAnimationFrame(() => {
-      fetch(`/api/orders/${encodeURIComponent(orderId)}`)
+      const q = viewToken ? `?t=${encodeURIComponent(viewToken)}` : "";
+      fetch(`/api/orders/${encodeURIComponent(orderId)}${q}`)
         .then((r) => r.json())
         .then((j) => {
           if (j.error) setErr(j.error);
@@ -42,7 +44,7 @@ function Inner() {
         .catch(() => setErr("No se pudo cargar la orden"));
     });
     return () => cancelAnimationFrame(frame);
-  }, [orderId]);
+  }, [orderId, viewToken]);
 
   const paid = data?.order.status === "paid";
 
@@ -92,7 +94,7 @@ function Inner() {
               </div>
               <div className="mt-2 text-xs text-muted">
                 Orden #{data.order.id}
-                {data.order.mpPaymentId ? ` · MP ${data.order.mpPaymentId}` : " · Demo (sin MP_ACCESS_TOKEN)"}
+                {data.order.mpPaymentId ? ` · MP ${data.order.mpPaymentId}` : ""}
               </div>
             </div>
 
@@ -101,11 +103,11 @@ function Inner() {
               {data.tickets.map((t) => (
                 <Link
                   key={t.id}
-                  href={`/ticket?id=${encodeURIComponent(t.id)}`}
+                  href={`/ticket?id=${encodeURIComponent(t.id)}&order=${encodeURIComponent(data.order.id)}${viewToken ? `&t=${encodeURIComponent(viewToken)}` : ""}`}
                   className="flex items-center gap-4 rounded-md bg-ink p-4"
                 >
                   <Image
-                    src={qrUrl(t.id, 176)}
+                    src={qrSrc(t.id, { orderId: data.order.id, token: viewToken || undefined })}
                     alt={`Código QR de ${t.name}`}
                     width={88}
                     height={88}

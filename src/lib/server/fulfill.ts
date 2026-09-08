@@ -1,9 +1,9 @@
-import { qrUrl } from "@/lib/data";
 import { site } from "@/lib/site";
+import { qrPath } from "./qr";
 import { getOrder, putTickets, type OrderRow, type TicketRow, ticketsForOrder } from "./store";
 
-export function issueTickets(order: OrderRow): TicketRow[] {
-  const existing = ticketsForOrder(order.id);
+export async function issueTickets(order: OrderRow): Promise<TicketRow[]> {
+  const existing = await ticketsForOrder(order.id);
   if (existing.length) return existing;
   const tickets: TicketRow[] = [];
   let n = 1;
@@ -21,19 +21,20 @@ export function issueTickets(order: OrderRow): TicketRow[] {
       n += 1;
     }
   }
-  putTickets(tickets);
+  await putTickets(tickets);
   return tickets;
 }
 
 export async function emailTickets(order: OrderRow, tickets: TicketRow[]) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return { sent: false as const, reason: "no_resend_key" };
-  const from = process.env.RESEND_FROM || "Tikeame <hola@tikeame.com.ar>";
+  const from = process.env.RESEND_FROM || "Tickeame <hola@tickeame.com.ar>";
+  const confirm = `${site.url}/confirmacion?order=${encodeURIComponent(order.id)}&t=${encodeURIComponent(order.viewToken)}`;
   const rows = tickets
-    .map(
-      (t) =>
-        `<tr><td style="padding:8px 0">${t.name}</td><td><img src="${qrUrl(t.id, 120)}" width="80" height="80" alt="QR"/></td><td>${t.id}</td></tr>`,
-    )
+    .map((t) => {
+      const src = `${site.url}${qrPath(t.id, { orderId: order.id, token: order.viewToken })}`;
+      return `<tr><td style="padding:8px 0">${t.name}</td><td><img src="${src}" width="80" height="80" alt="QR"/></td><td>${t.id}</td></tr>`;
+    })
     .join("");
   const html = `
     <div style="font-family:sans-serif;color:#2B1D4A">
@@ -41,7 +42,7 @@ export async function emailTickets(order: OrderRow, tickets: TicketRow[]) {
       <p>${order.eventTitle} · ${order.eventDate} · ${order.venue}</p>
       <p>Orden <b>#${order.id}</b></p>
       <table>${rows}</table>
-      <p><a href="${site.url}/confirmacion?order=${order.id}">Ver entradas</a></p>
+      <p><a href="${confirm}">Ver entradas</a></p>
     </div>`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -57,9 +58,9 @@ export async function emailTickets(order: OrderRow, tickets: TicketRow[]) {
 }
 
 export async function fulfillOrder(orderId: string) {
-  const order = getOrder(orderId);
+  const order = await getOrder(orderId);
   if (!order) return null;
-  const tickets = issueTickets(order);
+  const tickets = await issueTickets(order);
   const mail = await emailTickets(order, tickets);
   return { order, tickets, mail };
 }

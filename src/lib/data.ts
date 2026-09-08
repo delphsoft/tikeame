@@ -193,11 +193,15 @@ export const FUNNEL = [
 ];
 
 export function promoterLink(slug: string) {
-  return `tikeame.com.ar/r/${slug}`;
+  return `tickeame.com.ar/r/${slug}`;
 }
 
-export function qrUrl(data: string, size = 160) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=0&data=${encodeURIComponent(data)}`;
+export function qrSrc(ticketId: string, access?: { orderId?: string; token?: string }) {
+  const q = new URLSearchParams();
+  if (access?.orderId) q.set("order", access.orderId);
+  if (access?.token) q.set("t", access.token);
+  const qs = q.toString();
+  return `/api/qr/${encodeURIComponent(ticketId)}${qs ? `?${qs}` : ""}`;
 }
 
 export function tierBadge(tier: Promoter["tier"]) {

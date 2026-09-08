@@ -274,7 +274,7 @@ export default function NuevoEventoPage() {
           />
           <p className="mt-2 text-xs text-muted">
             Visible para tu público antes de pagar. Split 100% a tu Mercado Pago. Tikeame nunca
-            custodia la plata. Link público: tikeame.vercel.app/eventos/{slugPreview}
+            custodia la plata. Link público: tickeame.com.ar/eventos/{slugPreview}
           </p>
         </section>
 

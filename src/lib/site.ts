@@ -5,8 +5,8 @@ const vercel =
 export const site = {
   name: "Tikeame",
   tagline: "El tikeame que te lleva a la fiesta.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || vercel || "https://tikeame.vercel.app",
-  email: "hola@tikeame.com.ar",
+  url: process.env.NEXT_PUBLIC_SITE_URL || vercel || "https://tickeame.com.ar",
+  email: "hola@tickeame.com.ar",
   locale: "es_AR",
   description:
     "Comprá entradas para fiestas y eventos en Argentina. Cargo visible antes de pagar, QR de un solo ingreso y Mercado Pago. Tikeame nunca custodia fondos.",

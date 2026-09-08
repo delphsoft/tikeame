@@ -49,6 +49,7 @@ export default function CheckoutPage() {
       const data = (await res.json()) as {
         error?: string;
         orderId?: string;
+        viewToken?: string;
         checkoutUrl?: string;
         mode?: string;
       };
@@ -74,7 +75,8 @@ export default function CheckoutPage() {
         tickets: [],
         buyerName: name || "Comprador",
       });
-      router.push(`/confirmacion?order=${encodeURIComponent(data.orderId)}`);
+      const t = data.viewToken ? `&t=${encodeURIComponent(data.viewToken)}` : "";
+      router.push(`/confirmacion?order=${encodeURIComponent(data.orderId)}${t}`);
     } catch {
       setError("Error de red");
     } finally {
@@ -168,7 +170,7 @@ export default function CheckoutPage() {
             <div>
               <div className="text-sm font-bold text-ink">Mercado Pago</div>
               <div className="text-xs text-muted">
-                Si hay MP_ACCESS_TOKEN, cobrás en Checkout Pro. Si no, se confirma en demo.
+                En Vercel cobrás con Checkout Pro. En local, si no hay token, se confirma en demo.
               </div>
             </div>
           </div>

@@ -27,8 +27,8 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          email: email || "hola@tikeame.com.ar",
-          password: password || "tikeame",
+          email,
+          password,
           role,
         }),
       });
@@ -111,32 +111,35 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="tikeame"
+              placeholder="mínimo 8 caracteres"
               className="mt-1.5 w-full rounded border-2 border-border px-3.5 py-[11px] text-sm text-ink placeholder:text-muted2"
             />
           </label>
 
-          <div className="mt-3 mb-1 text-[11px] font-extrabold uppercase text-muted">Entrar como</div>
-          <div className="grid grid-cols-3 gap-1.5">
-            {(
-              [
-                ["buyer", "Comprador"],
-                ["organizer", "Organizador"],
-                ["admin", "Super admin"],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setRole(id)}
-                className={`rounded py-2 text-[11px] font-extrabold ${
-                  role === id ? "bg-ink text-cream" : "bg-cream text-muted"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          {isRegister && (
+            <>
+              <div className="mt-3 mb-1 text-[11px] font-extrabold uppercase text-muted">Tipo de cuenta</div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {(
+                  [
+                    ["buyer", "Comprador"],
+                    ["organizer", "Organizador"],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setRole(id)}
+                    className={`rounded py-2 text-[11px] font-extrabold ${
+                      role === id ? "bg-ink text-cream" : "bg-cream text-muted"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           <button
             type="button"
@@ -148,7 +151,7 @@ export default function LoginPage() {
           </button>
           {error && <p className="mt-3 text-center text-sm font-bold text-coral">{error}</p>}
           <p className="mt-4 text-center text-xs text-muted">
-            Demo: hola@tikeame.com.ar / tikeame — o registrate. Cookie httpOnly en el servidor.
+            En local: hola@ / organizador@ / admin@tickeame.com.ar · tikeame. En producción, registrate.
           </p>
         </div>
         <div className="mt-5 text-center">

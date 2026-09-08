@@ -4,7 +4,12 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const token = request.cookies.get("tikeame_session")?.value;
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const path = request.nextUrl.pathname;
+    const as = path.startsWith("/admin") ? "admin" : "organizer";
+    const url = new URL("/login", request.url);
+    url.searchParams.set("as", as);
+    url.searchParams.set("next", path);
+    return NextResponse.redirect(url);
   }
   return NextResponse.next();
 }

@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 export type Role = "buyer" | "organizer" | "admin";
 
 export type SessionUser = {
+  id?: string;
   name: string;
   email: string;
   role: Role;
@@ -24,15 +25,31 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        const data = (await res.json()) as { user?: SessionUser | null };
+        if (cancelled) return;
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem(KEY, JSON.stringify(data.user));
+          return;
+        }
+      } catch {
+        /* fall through to local cache */
+      }
+      if (cancelled) return;
       try {
         const raw = localStorage.getItem(KEY);
         if (raw) setUser(JSON.parse(raw) as SessionUser);
       } catch {
         /* ignore */
       }
-    });
-    return () => cancelAnimationFrame(frame);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = useCallback((next: SessionUser) => {
@@ -43,6 +60,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem(KEY);
+    void fetch("/api/auth/logout", { method: "POST" });
   }, []);
 
   const value = useMemo(() => ({ user, login, logout }), [user, login, logout]);

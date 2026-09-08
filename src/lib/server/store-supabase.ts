@@ -102,6 +102,10 @@ export const supabaseStore: StoreDriver = {
     });
     return user;
   },
+  async listUsers() {
+    const rows = await sb<UserRow[]>("tikeame_users?select=*&order=created_at.desc&limit=300");
+    return (rows ?? []).map(toUser);
+  },
   async putOrder(order) {
     await sb("tikeame_orders?on_conflict=id", {
       method: "POST",
@@ -123,6 +127,10 @@ export const supabaseStore: StoreDriver = {
     const rows = await sb<OrderDb[]>(
       `tikeame_orders?email=eq.${encodeURIComponent(email.toLowerCase())}&status=eq.paid&select=*`,
     );
+    return (rows ?? []).map(toOrder);
+  },
+  async listOrders() {
+    const rows = await sb<OrderDb[]>("tikeame_orders?select=*&order=created_at.desc&limit=300");
     return (rows ?? []).map(toOrder);
   },
   async putTickets(tickets) {
@@ -149,6 +157,10 @@ export const supabaseStore: StoreDriver = {
     const rows = await sb<TicketDb[]>(`tikeame_tickets?id=eq.${encodeURIComponent(id)}&select=*`);
     return rows?.[0]?.payload ?? null;
   },
+  async listTickets() {
+    const rows = await sb<TicketDb[]>("tikeame_tickets?select=*&order=id.desc&limit=400");
+    return (rows ?? []).map((r) => r.payload);
+  },
   async markTicketUsed(id) {
     const ticket = await supabaseStore.getTicket(id);
     if (!ticket) return null;
@@ -169,7 +181,7 @@ export const supabaseStore: StoreDriver = {
     });
   },
   async listScans() {
-    const rows = await sb<ScanDb[]>("tikeame_scans?select=payload&order=created_at.desc&limit=40");
+    const rows = await sb<ScanDb[]>("tikeame_scans?select=payload&order=created_at.desc&limit=200");
     return (rows ?? []).map((r) => r.payload);
   },
   async paidCount() {

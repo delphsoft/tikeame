@@ -32,10 +32,10 @@ export function SiteHeader({ variant = "home" }: SiteHeaderProps) {
               <a href="#como-funciona" className="text-sm font-bold text-ink">
                 Cómo funciona
               </a>
-              <Link href="/login" className="text-sm font-bold text-ink">
+              <Link href="/login?as=buyer" className="text-sm font-bold text-ink">
                 Iniciar sesión
               </Link>
-              <Link href="/organizadores" className="text-sm font-bold text-muted">
+              <Link href="/login?as=organizer" className="text-sm font-bold text-muted">
                 Soy organizador
               </Link>
               <a
@@ -57,8 +57,11 @@ export function SiteHeader({ variant = "home" }: SiteHeaderProps) {
               <Link href="/" className="text-sm font-bold text-ink">
                 Home eventos
               </Link>
+              <Link href="/login?as=organizer" className="text-sm font-bold text-ink">
+                Iniciar sesión
+              </Link>
               <Link
-                href="/organizador/nuevo"
+                href="/login?as=organizer&next=/organizador/nuevo"
                 className="rounded bg-coral px-5 py-[11px] text-sm font-extrabold text-white"
               >
                 Sumar mi evento
@@ -70,7 +73,7 @@ export function SiteHeader({ variant = "home" }: SiteHeaderProps) {
               <Link href="/" className="text-xs font-bold text-muted2">
                 Eventos
               </Link>
-              <Link href="/login" className="text-xs font-bold text-cream">
+              <Link href="/login?as=buyer" className="text-xs font-bold text-cream">
                 Iniciar sesión
               </Link>
               <a
@@ -100,10 +103,10 @@ export function SiteHeader({ variant = "home" }: SiteHeaderProps) {
               <a href="#eventos" onClick={() => setOpen(false)} className="text-sm font-bold">
                 Eventos
               </a>
-              <Link href="/login" className="text-sm font-bold">
+              <Link href="/login?as=buyer" className="text-sm font-bold">
                 Iniciar sesión
               </Link>
-              <Link href="/organizadores" className="text-sm font-bold">
+              <Link href="/login?as=organizer" className="text-sm font-bold">
                 Soy organizador
               </Link>
             </>
@@ -113,7 +116,10 @@ export function SiteHeader({ variant = "home" }: SiteHeaderProps) {
               <a href="#como-funciona" onClick={() => setOpen(false)} className="text-sm font-bold">
                 Cómo funciona
               </a>
-              <Link href="/organizador/nuevo" className="text-sm font-bold">
+              <Link href="/login?as=organizer" className="text-sm font-bold">
+                Iniciar sesión
+              </Link>
+              <Link href="/login?as=organizer&next=/organizador/nuevo" className="text-sm font-bold">
                 Sumar mi evento
               </Link>
             </>

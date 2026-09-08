@@ -8,6 +8,8 @@ export const metadata: Metadata = { title: "Panel organizador", ...noIndex };
 
 export default async function OrganizadorLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
-  if (user?.role !== "organizer" && user?.role !== "admin") redirect("/login");
+  if (user?.role !== "organizer" && user?.role !== "admin") {
+    redirect("/login?as=organizer&next=/organizador");
+  }
   return children;
 }

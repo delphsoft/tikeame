@@ -73,7 +73,7 @@ export default function OrganizadoresPage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3.5">
             <Link
-              href="/organizador/nuevo"
+              href="/login?as=organizer&next=/organizador/nuevo"
               className="rounded bg-coral px-7 py-4 text-[15px] font-extrabold text-cream"
             >
               Sumar mi evento
@@ -85,10 +85,10 @@ export default function OrganizadoresPage() {
               Cómo funciona
             </a>
             <Link
-              href="/organizador"
+              href="/login?as=organizer&next=/organizador"
               className="rounded px-7 py-4 text-[15px] font-extrabold text-cream underline-offset-4 hover:underline"
             >
-              Ir al panel
+              Iniciar sesión
             </Link>
           </div>
         </div>
@@ -185,7 +185,7 @@ export default function OrganizadoresPage() {
             Sumá tu evento y mostrale a tu público cuánto está pagando, de verdad.
           </p>
           <Link
-            href="/organizador/nuevo"
+            href="/login?as=organizer&next=/organizador/nuevo"
             className="relative mt-[30px] inline-block rounded bg-ink px-[34px] py-4 text-[15px] font-extrabold text-cream"
           >
             Sumar mi evento

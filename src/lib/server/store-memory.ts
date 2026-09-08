@@ -96,6 +96,9 @@ export const memoryStore: StoreDriver = {
     save(dbx);
     return user;
   },
+  async listUsers() {
+    return load().users;
+  },
   async putOrder(order) {
     const dbx = load();
     const i = dbx.orders.findIndex((o) => o.id === order.id);
@@ -109,6 +112,9 @@ export const memoryStore: StoreDriver = {
   async ordersByEmail(email) {
     return load().orders.filter((o) => o.email.toLowerCase() === email.toLowerCase() && o.status === "paid");
   },
+  async listOrders() {
+    return load().orders;
+  },
   async putTickets(tickets) {
     const dbx = load();
     for (const t of tickets) {
@@ -121,6 +127,9 @@ export const memoryStore: StoreDriver = {
   },
   async getTicket(id) {
     return load().tickets.find((t) => t.id === id) ?? null;
+  },
+  async listTickets() {
+    return load().tickets;
   },
   async markTicketUsed(id) {
     const dbx = load();

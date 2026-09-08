@@ -17,9 +17,18 @@ export default function CuentaPage() {
 
         {!user && (
           <div className="mt-6 rounded-2xl border-2 border-ink bg-white p-6">
-            <p className="text-sm text-muted">Entrá para ver entradas y preferencias.</p>
-            <Link href="/login" className="mt-4 inline-block w-full rounded-full bg-coral py-3 text-center text-sm font-extrabold text-white">
-              Iniciar sesión
+            <p className="text-sm text-muted">Entrá para ver entradas o tu panel de productora.</p>
+            <Link
+              href="/login?as=buyer"
+              className="mt-4 inline-block w-full rounded-full bg-coral py-3 text-center text-sm font-extrabold text-white"
+            >
+              Soy comprador
+            </Link>
+            <Link
+              href="/login?as=organizer"
+              className="mt-3 inline-block w-full rounded-full border-2 border-ink py-3 text-center text-sm font-extrabold"
+            >
+              Soy organizador
             </Link>
           </div>
         )}
@@ -28,7 +37,19 @@ export default function CuentaPage() {
           <div className="mt-6 rounded-2xl border-2 border-ink bg-white p-5">
             <div className="font-extrabold">{user.name}</div>
             <div className="mt-1 text-sm text-muted">{user.email}</div>
-            <div className="mt-2 text-[11px] font-extrabold uppercase text-coral">{user.role}</div>
+            <div className="mt-2 text-[11px] font-extrabold uppercase text-coral">
+              {user.role === "admin" ? "Super admin" : user.role === "organizer" ? "Organizador" : "Comprador"}
+            </div>
+            {user.role === "admin" && (
+              <Link href="/admin" className="mt-3 inline-block text-sm font-bold text-coral">
+                Ir al super admin →
+              </Link>
+            )}
+            {user.role === "organizer" && (
+              <Link href="/organizador" className="mt-3 inline-block text-sm font-bold text-coral">
+                Ir al panel organizador →
+              </Link>
+            )}
             <button
               type="button"
               onClick={async () => {
@@ -47,7 +68,7 @@ export default function CuentaPage() {
           <Link href="/entradas" className="border-b border-border px-5 py-4 text-sm font-extrabold">
             Mis entradas
           </Link>
-          <Link href="/organizadores" className="border-b border-border px-5 py-4 text-sm font-extrabold">
+          <Link href="/login?as=organizer" className="border-b border-border px-5 py-4 text-sm font-extrabold">
             Soy organizador
           </Link>
           <Link href="/legal/terminos" className="border-b border-border px-5 py-4 text-sm font-extrabold">

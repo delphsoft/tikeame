@@ -1,37 +1,69 @@
-"use client";
-
 import Link from "next/link";
 import { AdminHeader } from "@/components/AdminHeader";
-import { ORGANIZERS, eventGross, eventSold, statusLabel, statusTone, useEvents } from "@/lib/events";
 import { fmtARS } from "@/lib/money";
+import { listOrders, listScans, listTickets, listUsers } from "@/lib/server/store";
 
-export default function AdminPage() {
-  const { events, setStatus } = useEvents();
-  const sold = events.reduce((s, e) => s + eventSold(e), 0);
-  const gmv = events.reduce((s, e) => s + eventGross(e), 0);
-  const take = events.reduce((s, e) => s + eventGross(e) * (e.commissionPct / 100), 0);
-  const live = events.filter((e) => e.status === "on_sale").length;
-  const connected = ORGANIZERS.filter((o) => o.mp === "connected").length;
+export const dynamic = "force-dynamic";
+
+function fmtWhen(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
+}
+
+function roleLabel(role: string) {
+  if (role === "admin") return "Super admin";
+  if (role === "organizer") return "Organizador";
+  return "Comprador";
+}
+
+function statusClass(status: string) {
+  if (status === "paid" || status === "valid" || status === "on_sale") return "bg-teal text-white";
+  if (status === "used") return "bg-coral text-white";
+  if (status === "pending") return "bg-wash text-muted";
+  return "bg-ink text-cream";
+}
+
+export default async function AdminPage() {
+  const [users, orders, tickets, scans] = await Promise.all([
+    listUsers(),
+    listOrders(),
+    listTickets(),
+    listScans(),
+  ]);
+
+  const buyers = users.filter((u) => u.role === "buyer").length;
+  const organizers = users.filter((u) => u.role === "organizer").length;
+  const admins = users.filter((u) => u.role === "admin").length;
+  const paid = orders.filter((o) => o.status === "paid");
+  const gmv = paid.reduce((s, o) => s + o.total, 0);
+  const take = paid.reduce((s, o) => s + o.fee, 0);
+  const used = tickets.filter((t) => t.status === "used").length;
 
   return (
     <div className="min-h-screen bg-cream">
-      <AdminHeader />
+      <AdminHeader active="resumen" />
       <div className="mx-auto max-w-[1160px] px-5 py-9 md:px-10">
         <div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-coral">
           Tikeame · plataforma
         </div>
         <h1 className="mt-1 font-display text-[28px] uppercase">Super admin</h1>
         <p className="mt-1 max-w-xl text-[13px] text-muted">
-          Split Marketplace de Mercado Pago. Tikeame nunca custodia fondos: acá ves GMV, comisión
-          y el estado de cada productora.
+          Usuarios, órdenes, tickets y check-ins reales. Tikeame nunca custodia fondos: el cobro
+          va por Mercado Pago.
         </p>
 
         <div className="mt-7 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "GMV (entradas)", value: fmtARS(gmv), sub: "nunca pasa por Tikeame" },
-            { label: "Comisión plataforma", value: fmtARS(take), sub: "2–5% vía split MP" },
-            { label: "Eventos en venta", value: String(live), sub: `${events.length} cargados` },
-            { label: "Entradas vendidas", value: sold.toLocaleString("es-AR"), sub: `${connected} MP conectados` },
+            { label: "GMV cobrado", value: fmtARS(gmv), sub: `${paid.length} órdenes pagas` },
+            { label: "Comisión", value: fmtARS(take), sub: "fee Tikeame" },
+            { label: "Tickets", value: String(tickets.length), sub: `${used} usados en puerta` },
+            {
+              label: "Usuarios",
+              value: String(users.length),
+              sub: `${buyers} compradores · ${organizers} orgs · ${admins} admin`,
+            },
           ].map((s, i) => (
             <div
               key={s.label}
@@ -45,123 +77,142 @@ export default function AdminPage() {
           ))}
         </div>
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          <div className="rounded-md border-2 border-ink bg-ink p-5 text-cream lg:col-span-2">
-            <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-coral">
-              Mercado Pago Marketplace
+        <section id="usuarios" className="mt-10">
+          <h2 className="font-display text-2xl uppercase">Usuarios</h2>
+          <div className="mt-4 overflow-x-auto rounded-md border-2 border-ink bg-white">
+            <div className="grid min-w-[640px] grid-cols-[1.2fr_1.4fr_.9fr_.7fr] bg-cream px-4 py-2.5 text-[11px] font-extrabold uppercase text-muted">
+              <div>Nombre</div>
+              <div>Email</div>
+              <div>Rol</div>
+              <div>Id</div>
             </div>
-            <div className="mt-3 font-display text-3xl">Split sano</div>
-            <p className="mt-2 max-w-lg text-sm text-muted2">
-              Cada cobro se parte en el checkout: 100% de la entrada a la productora, comisión
-              Tikeame a la cuenta plataforma. No hay wallet interna.
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              {[
-                ["Cuentas MP", `${connected}/${ORGANIZERS.length}`],
-                ["Región", "gru1 · AR"],
-                ["Custodia", "0 pesos"],
-              ].map(([k, v]) => (
-                <div key={k} className="rounded bg-plum px-4 py-3">
-                  <div className="text-[11px] font-extrabold uppercase text-muted2">{k}</div>
-                  <div className="mt-1 text-sm font-extrabold">{v}</div>
+            {users.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted">Todavía no hay cuentas.</p>
+            ) : (
+              users.map((u) => (
+                <div
+                  key={u.id}
+                  className="grid min-w-[640px] grid-cols-[1.2fr_1.4fr_.9fr_.7fr] items-center border-t border-border px-4 py-3 text-[13px]"
+                >
+                  <div className="font-bold">{u.name}</div>
+                  <div className="truncate text-muted">{u.email}</div>
+                  <div>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${statusClass(u.role)}`}>
+                      {roleLabel(u.role)}
+                    </span>
+                  </div>
+                  <div className="truncate font-mono text-[11px] text-muted">{u.id}</div>
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-md border-2 border-ink bg-white p-5">
-            <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-coral">
-              Actividad
-            </div>
-            <div className="mt-4 flex flex-col gap-3 text-[13px]">
-              <div>NEÓN · +38 entradas hoy</div>
-              <div>Pulse BA · TECHNO UNDERGROUND publicado</div>
-              <div>Costa Events · MP pendiente de OAuth</div>
-              <div>Nico Paz · referido desbloqueado</div>
-            </div>
-          </div>
-        </div>
-
-        <section id="eventos" className="mt-10">
-          <div className="mb-4 flex items-end justify-between">
-            <h2 className="font-display text-2xl uppercase">Eventos</h2>
-            <Link href="/organizador/nuevo" className="text-xs font-extrabold text-coral">
-              Crear como organizador →
-            </Link>
-          </div>
-          <div className="overflow-hidden rounded-md border-2 border-ink bg-white">
-            <div className="grid grid-cols-[1.4fr_1fr_.8fr_.7fr_.9fr] bg-cream px-4 py-2.5 text-[11px] font-extrabold uppercase text-muted">
-              <div>Evento</div>
-              <div>Productora</div>
-              <div>Vendidas</div>
-              <div>%</div>
-              <div>Estado</div>
-            </div>
-            {events.map((e) => (
-              <div
-                key={e.slug}
-                className="grid grid-cols-[1.4fr_1fr_.8fr_.7fr_.9fr] items-center border-t border-border px-4 py-3 text-[13px]"
-              >
-                <Link href={`/eventos/${e.slug}`} className="font-bold hover:text-coral">
-                  {e.title}
-                </Link>
-                <div className="text-muted">{e.organizerName}</div>
-                <div>{eventSold(e).toLocaleString("es-AR")}</div>
-                <div>{e.commissionPct}%</div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${statusTone(e.status)}`}>
-                    {statusLabel(e.status)}
-                  </span>
-                  {e.status === "on_sale" ? (
-                    <button
-                      type="button"
-                      onClick={() => setStatus(e.slug, "paused")}
-                      className="text-[11px] font-bold text-coral"
-                    >
-                      Pausar
-                    </button>
-                  ) : e.status === "paused" || e.status === "draft" ? (
-                    <button
-                      type="button"
-                      onClick={() => setStatus(e.slug, "on_sale")}
-                      className="text-[11px] font-bold text-teal"
-                    >
-                      Activar
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
 
-        <section id="productoras" className="mt-10 mb-8">
-          <h2 className="font-display text-2xl uppercase">Productoras</h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            {ORGANIZERS.map((o) => {
-              const theirs = events.filter((e) => e.organizerId === o.id);
-              return (
-                <div key={o.id} className="rounded-md border-2 border-ink bg-white p-5">
-                  <div className="font-display text-lg uppercase">{o.name}</div>
-                  <div className="mt-1 text-xs text-muted">
-                    {o.city} · {o.email}
+        <section id="ordenes" className="mt-10">
+          <h2 className="font-display text-2xl uppercase">Órdenes</h2>
+          <div className="mt-4 overflow-x-auto rounded-md border-2 border-ink bg-white">
+            <div className="grid min-w-[760px] grid-cols-[1fr_1.2fr_1.3fr_.7fr_.7fr_.9fr] bg-cream px-4 py-2.5 text-[11px] font-extrabold uppercase text-muted">
+              <div>Orden</div>
+              <div>Comprador</div>
+              <div>Evento</div>
+              <div>Total</div>
+              <div>Estado</div>
+              <div>Cuando</div>
+            </div>
+            {orders.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted">Sin compras todavía.</p>
+            ) : (
+              orders.map((o) => (
+                <div
+                  key={o.id}
+                  className="grid min-w-[760px] grid-cols-[1fr_1.2fr_1.3fr_.7fr_.7fr_.9fr] items-center border-t border-border px-4 py-3 text-[13px]"
+                >
+                  <div className="font-mono text-[12px] font-bold">{o.id}</div>
+                  <div>
+                    <div className="font-bold">{o.buyerName}</div>
+                    <div className="truncate text-xs text-muted">{o.email}</div>
                   </div>
-                  <div className="mt-4 flex items-center justify-between text-sm">
-                    <span>{theirs.length} eventos</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                        o.mp === "connected"
-                          ? "bg-teal text-white"
-                          : o.mp === "pending"
-                            ? "bg-wash text-muted"
-                            : "bg-coral text-white"
-                      }`}
-                    >
-                      MP {o.mp === "connected" ? "conectado" : o.mp === "pending" ? "pendiente" : "error"}
+                  <div>
+                    <Link href={`/eventos/${o.eventSlug}`} className="font-bold hover:text-coral">
+                      {o.eventTitle}
+                    </Link>
+                  </div>
+                  <div>{fmtARS(o.total)}</div>
+                  <div>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${statusClass(o.status)}`}>
+                      {o.status}
                     </span>
                   </div>
+                  <div className="text-xs text-muted">{fmtWhen(o.createdAt)}</div>
                 </div>
-              );
-            })}
+              ))
+            )}
+          </div>
+        </section>
+
+        <section id="tickets" className="mt-10">
+          <h2 className="font-display text-2xl uppercase">Tickets</h2>
+          <div className="mt-4 overflow-x-auto rounded-md border-2 border-ink bg-white">
+            <div className="grid min-w-[720px] grid-cols-[1.1fr_.9fr_1fr_.7fr_.9fr] bg-cream px-4 py-2.5 text-[11px] font-extrabold uppercase text-muted">
+              <div>Ticket</div>
+              <div>Orden</div>
+              <div>Tipo</div>
+              <div>Estado</div>
+              <div>Usado</div>
+            </div>
+            {tickets.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted">Sin tickets emitidos.</p>
+            ) : (
+              tickets.map((t) => (
+                <div
+                  key={t.id}
+                  className="grid min-w-[720px] grid-cols-[1.1fr_.9fr_1fr_.7fr_.9fr] items-center border-t border-border px-4 py-3 text-[13px]"
+                >
+                  <div className="font-mono text-[12px] font-bold">{t.id}</div>
+                  <div className="font-mono text-[12px] text-muted">{t.orderId}</div>
+                  <div>
+                    {t.name} · {t.eventSlug}
+                  </div>
+                  <div>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${statusClass(t.status)}`}>
+                      {t.status}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted">{fmtWhen(t.usedAt)}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section id="checkins" className="mt-10 mb-8">
+          <h2 className="font-display text-2xl uppercase">Check-ins</h2>
+          <div className="mt-4 overflow-hidden rounded-md border-2 border-ink bg-white">
+            <div className="grid grid-cols-[1fr_1fr_.8fr_.8fr] bg-cream px-4 py-2.5 text-[11px] font-extrabold uppercase text-muted">
+              <div>Ticket</div>
+              <div>Nombre</div>
+              <div>Resultado</div>
+              <div>Hora</div>
+            </div>
+            {scans.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted">Nadie escaneó todavía.</p>
+            ) : (
+              scans.map((s) => (
+                <div
+                  key={s.id}
+                  className="grid grid-cols-[1fr_1fr_.8fr_.8fr] items-center border-t border-border px-4 py-3 text-[13px]"
+                >
+                  <div className="font-mono text-[12px]">{s.ticketId}</div>
+                  <div className="font-bold">{s.name}</div>
+                  <div>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${statusClass(s.status)}`}>
+                      {s.status}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted">{s.time}</div>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>

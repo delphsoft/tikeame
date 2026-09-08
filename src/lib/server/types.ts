@@ -54,12 +54,15 @@ export type StoreDriver = {
   findUserByEmail(email: string): Promise<User | null>;
   findUserById(id: string): Promise<User | null>;
   createUser(input: { name: string; email: string; password: string; role: Role }): Promise<User>;
+  listUsers(): Promise<User[]>;
   putOrder(order: OrderRow): Promise<void>;
   getOrder(id: string): Promise<OrderRow | null>;
   ordersByEmail(email: string): Promise<OrderRow[]>;
+  listOrders(): Promise<OrderRow[]>;
   putTickets(tickets: TicketRow[]): Promise<void>;
   ticketsForOrder(orderId: string): Promise<TicketRow[]>;
   getTicket(id: string): Promise<TicketRow | null>;
+  listTickets(): Promise<TicketRow[]>;
   markTicketUsed(id: string): Promise<TicketRow | null>;
   addScan(scan: ScanRow): Promise<void>;
   listScans(): Promise<ScanRow[]>;

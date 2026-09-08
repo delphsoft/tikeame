@@ -1,15 +1,22 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Logo } from "./Logo";
+import { useSession } from "@/lib/session";
 
 export function AdminHeader({
   active = "resumen",
 }: {
-  active?: "resumen" | "eventos" | "productoras";
+  active?: "resumen" | "usuarios" | "ordenes" | "tickets";
 }) {
+  const router = useRouter();
+  const { logout } = useSession();
   const links = [
     { href: "/admin", label: "Resumen", key: "resumen" },
-    { href: "/admin#eventos", label: "Eventos", key: "eventos" },
-    { href: "/admin#productoras", label: "Productoras", key: "productoras" },
+    { href: "/admin#usuarios", label: "Usuarios", key: "usuarios" },
+    { href: "/admin#ordenes", label: "Órdenes", key: "ordenes" },
+    { href: "/admin#tickets", label: "Tickets", key: "tickets" },
   ] as const;
 
   return (
@@ -34,9 +41,22 @@ export function AdminHeader({
             ))}
           </nav>
         </div>
-        <Link href="/organizador" className="text-[13px] font-extrabold text-cream">
-          Vista organizador →
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/organizador" className="text-[13px] font-extrabold text-cream">
+            Vista organizador →
+          </Link>
+          <button
+            type="button"
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              logout();
+              router.push("/login");
+            }}
+            className="text-[13px] font-extrabold text-muted2 hover:text-cream"
+          >
+            Salir
+          </button>
+        </div>
       </div>
     </header>
   );

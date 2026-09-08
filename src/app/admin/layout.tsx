@@ -8,6 +8,6 @@ export const metadata: Metadata = { title: "Super admin", ...noIndex };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
-  if (user?.role !== "admin") redirect("/login");
+  if (user?.role !== "admin") redirect("/login?as=admin&next=/admin");
   return children;
 }

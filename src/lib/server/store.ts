@@ -43,6 +43,10 @@ export async function createUser(input: { name: string; email: string; password:
   return driver().createUser(input);
 }
 
+export async function listUsers() {
+  return driver().listUsers();
+}
+
 export async function putOrder(order: OrderRow) {
   return driver().putOrder(order);
 }
@@ -53,6 +57,10 @@ export async function getOrder(id: string) {
 
 export async function ordersByEmail(email: string) {
   return driver().ordersByEmail(email);
+}
+
+export async function listOrders() {
+  return driver().listOrders();
 }
 
 export async function putTickets(tickets: TicketRow[]) {
@@ -75,6 +83,10 @@ export async function ticketsByEmail(email: string) {
 
 export async function getTicket(id: string) {
   return driver().getTicket(id);
+}
+
+export async function listTickets() {
+  return driver().listTickets();
 }
 
 export async function markTicketUsed(id: string) {

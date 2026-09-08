@@ -30,7 +30,7 @@ export default function CheckinPage() {
       fetch("/api/checkin")
         .then(async (r) => {
           if (r.status === 401 || r.status === 403) {
-            router.replace("/login");
+            router.replace("/login?as=organizer&next=/organizador/checkin");
             return;
           }
           const j = (await r.json()) as { scans?: Scan[]; checkedIn?: number; sold?: number };
@@ -55,7 +55,7 @@ export default function CheckinPage() {
       });
       const j = (await res.json()) as { result?: Scan; checkedIn?: number; sold?: number; error?: string };
       if (res.status === 401 || res.status === 403) {
-        router.replace("/login");
+        router.replace("/login?as=organizer&next=/organizador/checkin");
         return;
       }
       if (j.result) setLog((prev) => [j.result!, ...prev].slice(0, 12));

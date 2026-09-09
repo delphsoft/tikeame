@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { LogoMark } from "@/components/LogoMark";
 
 export const alt = "Tickeame — El tikeame que te lleva a la fiesta.";
 export const size = { width: 1200, height: 630 };
@@ -48,12 +49,14 @@ export default function OpenGraphImage() {
           style={{
             marginTop: "auto",
             display: "flex",
-            alignItems: "baseline",
+            alignItems: "center",
+            gap: 14,
             color: "#F4EEDC",
             fontSize: 36,
             fontWeight: 800,
           }}
         >
+          <LogoMark size={44} light />
           TICKEAME<span style={{ color: "#FF6B5B" }}>.</span>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { LogoMark } from "@/components/LogoMark";
 import { getPublicEvent } from "@/lib/public-events";
 
 export const alt = "Evento en Tickeame";
@@ -56,11 +57,15 @@ export default async function EventOg({ params }: { params: Promise<{ slug: stri
         <div
           style={{
             marginTop: "auto",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
             color: "#F4EEDC",
             fontSize: 28,
             fontWeight: 800,
           }}
         >
+          <LogoMark size={36} light />
           TICKEAME<span style={{ color: "#FF6B5B" }}>.</span>
         </div>
       </div>

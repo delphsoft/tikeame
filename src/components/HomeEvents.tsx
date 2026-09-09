@@ -105,8 +105,12 @@ export function HomeEvents() {
     return list;
   }, [live, mode, detected, origin]);
 
-  const featured = filtered[0];
-  const rest = filtered.slice(1);
+  // Prefer the editorially-pinned event as the hero banner when it's in the
+  // current (already location-filtered/sorted) list; otherwise fall back to
+  // the closest match.
+  const pinned = filtered.find((e) => e.featured);
+  const featured = pinned ?? filtered[0];
+  const rest = filtered.filter((e) => e.slug !== featured?.slug);
   const cityLabel =
     mode === "all"
       ? "Todo el país"

@@ -90,8 +90,12 @@ export function HomeEvents() {
     let list = live;
     if (mode !== "all" && mode !== "near") list = live.filter((e) => e.cityId === mode);
     if (mode === "near" && detected) {
-      list = live.filter((e) => e.cityId === detected.id);
-      if (list.length === 0) list = live;
+      // Auto-detected proximity: only narrow to the local city when it has
+      // enough events to fill the grid. Otherwise the "rest" cards would
+      // collapse to almost nothing right after we detect the user's city —
+      // fall back to the full list (still distance-sorted below).
+      const nearby = live.filter((e) => e.cityId === detected.id);
+      list = nearby.length >= 3 ? nearby : live;
     }
     if (origin) {
       list = [...list].sort(

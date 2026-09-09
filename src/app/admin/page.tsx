@@ -37,9 +37,43 @@ export default async function AdminPage() {
   const organizers = users.filter((u) => u.role === "organizer").length;
   const admins = users.filter((u) => u.role === "admin").length;
   const paid = orders.filter((o) => o.status === "paid");
+  const failed = orders.filter((o) => o.status === "failed");
+  const pending = orders.filter((o) => o.status === "pending");
   const gmv = paid.reduce((s, o) => s + o.total, 0);
   const take = paid.reduce((s, o) => s + o.fee, 0);
   const used = tickets.filter((t) => t.status === "used").length;
+
+  // Métricas de negocio: funnel de conversión, ticket promedio y ranking por evento.
+  const attempted = paid.length + failed.length;
+  const conversionRate = attempted > 0 ? (paid.length / attempted) * 100 : 0;
+  const aov = paid.length > 0 ? gmv / paid.length : 0;
+  const checkinRate = tickets.length > 0 ? (used / tickets.length) * 100 : 0;
+
+  const byEvent = new Map<
+    string,
+    { title: string; gmv: number; fee: number; orders: number; tickets: number; used: number }
+  >();
+  for (const o of paid) {
+    const row = byEvent.get(o.eventSlug) ?? {
+      title: o.eventTitle,
+      gmv: 0,
+      fee: 0,
+      orders: 0,
+      tickets: 0,
+      used: 0,
+    };
+    row.gmv += o.total;
+    row.fee += o.fee;
+    row.orders += 1;
+    byEvent.set(o.eventSlug, row);
+  }
+  for (const t of tickets) {
+    const row = byEvent.get(t.eventSlug);
+    if (!row) continue;
+    row.tickets += 1;
+    if (t.status === "used") row.used += 1;
+  }
+  const eventRanking = [...byEvent.entries()].sort((a, b) => b[1].gmv - a[1].gmv);
 
   return (
     <div className="min-h-screen bg-cream">
@@ -76,6 +110,70 @@ export default async function AdminPage() {
             </div>
           ))}
         </div>
+
+        <section id="metricas" className="mt-10">
+          <h2 className="font-display text-2xl uppercase">Métricas</h2>
+          <p className="mt-1 text-[13px] text-muted">
+            Conversión, ticket promedio y ranking por evento — calculado sobre tus órdenes y tickets reales.
+          </p>
+          <div className="mt-4 grid gap-3.5 sm:grid-cols-3">
+            {[
+              {
+                label: "Conversión de pago",
+                value: `${conversionRate.toFixed(0)}%`,
+                sub: `${paid.length} pagas de ${attempted} intentadas${pending.length ? ` · ${pending.length} pendientes` : ""}`,
+              },
+              {
+                label: "Ticket promedio",
+                value: fmtARS(aov),
+                sub: `sobre ${paid.length} órdenes pagas`,
+              },
+              {
+                label: "Check-in en puerta",
+                value: `${checkinRate.toFixed(0)}%`,
+                sub: `${used} usados de ${tickets.length} emitidos`,
+              },
+            ].map((s) => (
+              <div key={s.label} className="rounded-md border-2 border-ink bg-white p-[18px]">
+                <div className="text-[11px] font-extrabold uppercase text-muted">{s.label}</div>
+                <div className="mt-2 font-display text-[26px]">{s.value}</div>
+                <div className="mt-1 text-xs font-bold text-teal">{s.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 overflow-x-auto rounded-md border-2 border-ink bg-white">
+            <div className="grid min-w-[720px] grid-cols-[1.6fr_.8fr_.8fr_.7fr_.8fr_.8fr] bg-cream px-4 py-2.5 text-[11px] font-extrabold uppercase text-muted">
+              <div>Evento</div>
+              <div>GMV</div>
+              <div>Comisión</div>
+              <div>Órdenes</div>
+              <div>Tickets</div>
+              <div>Check-in</div>
+            </div>
+            {eventRanking.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted">Todavía no hay ventas pagas.</p>
+            ) : (
+              eventRanking.map(([slug, row]) => (
+                <div
+                  key={slug}
+                  className="grid min-w-[720px] grid-cols-[1.6fr_.8fr_.8fr_.7fr_.8fr_.8fr] items-center border-t border-border px-4 py-3 text-[13px]"
+                >
+                  <div>
+                    <Link href={`/eventos/${slug}`} className="font-bold hover:text-coral">
+                      {row.title}
+                    </Link>
+                  </div>
+                  <div>{fmtARS(row.gmv)}</div>
+                  <div>{fmtARS(row.fee)}</div>
+                  <div>{row.orders}</div>
+                  <div>{row.tickets}</div>
+                  <div>{row.tickets > 0 ? `${((row.used / row.tickets) * 100).toFixed(0)}%` : "—"}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
 
         <section id="usuarios" className="mt-10">
           <h2 className="font-display text-2xl uppercase">Usuarios</h2>

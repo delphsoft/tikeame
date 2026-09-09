@@ -8,12 +8,13 @@ import { useSession } from "@/lib/session";
 export function AdminHeader({
   active = "resumen",
 }: {
-  active?: "resumen" | "usuarios" | "ordenes" | "tickets";
+  active?: "resumen" | "metricas" | "usuarios" | "ordenes" | "tickets";
 }) {
   const router = useRouter();
   const { logout } = useSession();
   const links = [
     { href: "/admin", label: "Resumen", key: "resumen" },
+    { href: "/admin#metricas", label: "Métricas", key: "metricas" },
     { href: "/admin#usuarios", label: "Usuarios", key: "usuarios" },
     { href: "/admin#ordenes", label: "Órdenes", key: "ordenes" },
     { href: "/admin#tickets", label: "Tickets", key: "tickets" },

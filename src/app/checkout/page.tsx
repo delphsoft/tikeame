@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -33,6 +34,7 @@ export default function CheckoutPage() {
     if (itemCount === 0) return;
     setBusy(true);
     setError("");
+    track("checkout_iniciado", { eventSlug, itemCount, total });
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -58,9 +60,11 @@ export default function CheckoutPage() {
         return;
       }
       if (data.mode === "mercadopago") {
+        track("checkout_redirigido_mp", { eventSlug, total });
         window.location.href = data.checkoutUrl;
         return;
       }
+      track("compra_confirmada", { eventSlug, total, mode: data.mode });
       setOrder({
         id: data.orderId,
         items: TICKET_TIERS.filter((t) => qty[t.key] > 0).map((t) => ({

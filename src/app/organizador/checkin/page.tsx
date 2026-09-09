@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { track } from "@vercel/analytics";
 import { useEffect, useState } from "react";
 import { OrganizerHeader } from "@/components/OrganizerHeader";
 import { scanStatusStyle } from "@/lib/data";
@@ -58,7 +59,10 @@ export default function CheckinPage() {
         router.replace("/login?as=organizer&next=/organizador/checkin");
         return;
       }
-      if (j.result) setLog((prev) => [j.result!, ...prev].slice(0, 12));
+      if (j.result) {
+        setLog((prev) => [j.result!, ...prev].slice(0, 12));
+        track("checkin_escaneo", { status: j.result.status });
+      }
       if (typeof j.checkedIn === "number") setCheckedIn(j.checkedIn);
       if (typeof j.sold === "number") setSold(j.sold);
       setCode("");

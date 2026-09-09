@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/react";
 import { Anton, Manrope } from "next/font/google";
 import { JsonLd } from "@/components/JsonLd";
 import { AppTabs } from "@/components/AppTabs";
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </SessionProvider>
           </EventsProvider>
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );

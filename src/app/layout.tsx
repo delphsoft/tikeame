@@ -3,6 +3,8 @@ import { Analytics } from "@vercel/analytics/react";
 import { Anton, Manrope } from "next/font/google";
 import { JsonLd } from "@/components/JsonLd";
 import { AppTabs } from "@/components/AppTabs";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { GoogleAnalyticsPageview } from "@/components/GoogleAnalyticsPageview";
 import { CartProvider } from "@/lib/cart";
 import { EventsProvider } from "@/lib/events";
 import { SessionProvider } from "@/lib/session";
@@ -70,6 +72,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es-AR" className={`${anton.variable} ${manrope.variable} h-full antialiased`}>
       <body className="min-h-full bg-cream font-sans text-ink">
+        <GoogleAnalytics />
+        <GoogleAnalyticsPageview />
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={websiteJsonLd()} />
         <CartProvider>

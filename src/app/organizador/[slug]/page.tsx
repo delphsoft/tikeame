@@ -119,7 +119,7 @@ export default function EventDashPage() {
               <div className="text-[11px] font-extrabold uppercase text-teal">Ingresos netos</div>
               <div className="mt-1 font-display text-[22px]">{fmtARS(net)}</div>
               <div className="mt-0.5 text-xs text-muted">
-                Comisión Tikeame {fmtARS(fee)} · ya descontada
+                Comisión Tickeame {fmtARS(fee)} · ya descontada
               </div>
             </div>
           </div>

@@ -147,7 +147,7 @@ export function itemListJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "Próximos eventos en Tikeame",
+    name: "Próximos eventos en Tickeame",
     itemListElement: events.map((e, i) => ({
       "@type": "ListItem",
       position: i + 1,
@@ -173,7 +173,7 @@ export function serviceJsonLd() {
   return {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: "Tikeame para organizadores",
+    name: "Tickeame para organizadores",
     serviceType: "Ticketera online",
     provider: { "@type": "Organization", name: site.name, url: site.url },
     areaServed: { "@type": "Country", name: "Argentina" },

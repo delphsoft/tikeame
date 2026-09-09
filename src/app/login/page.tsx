@@ -44,7 +44,7 @@ function LoginForm() {
     }
     return {
       kicker: "Comprador",
-      title: isRegister ? "Creá tu cuenta" : "Entrá a Tikeame",
+      title: isRegister ? "Creá tu cuenta" : "Entrá a Tickeame",
       hint: "Tus entradas y QR, en un solo lugar.",
     };
   }, [isOrganizer, isRegister]);

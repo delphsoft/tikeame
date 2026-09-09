@@ -3,15 +3,15 @@ const vercel =
   `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
 
 export const site = {
-  name: "Tikeame",
+  name: "Tickeame",
   tagline: "El tikeame que te lleva a la fiesta.",
   url: process.env.NEXT_PUBLIC_SITE_URL || vercel || "https://tickeame.com.ar",
   email: "hola@tickeame.com.ar",
   locale: "es_AR",
   description:
-    "Comprá entradas para fiestas y eventos en Argentina. Cargo visible antes de pagar, QR de un solo ingreso y Mercado Pago. Tikeame nunca custodia fondos.",
+    "Comprá entradas para fiestas y eventos en Argentina. Cargo visible antes de pagar, QR de un solo ingreso y Mercado Pago. Tickeame nunca custodia fondos.",
   organizerDescription:
-    "Ticketera para productoras. Split automático a tu cuenta de Mercado Pago, comisión 2–5% visible, check-in y RRPP por ingresos reales. Tikeame nunca custodia tu plata.",
+    "Ticketera para productoras. Split automático a tu cuenta de Mercado Pago, comisión 2–5% visible, check-in y RRPP por ingresos reales. Tickeame nunca custodia tu plata.",
   keywords: [
     "entradas online Argentina",
     "ticketera argentina",

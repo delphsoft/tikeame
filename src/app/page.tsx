@@ -12,7 +12,7 @@ import { site } from "@/lib/site";
 
 export const metadata: Metadata = pageMeta({
   title: "Entradas para fiestas y eventos",
-  absoluteTitle: "Tikeame | Entradas para fiestas y eventos en Argentina",
+  absoluteTitle: "Tickeame | Entradas para fiestas y eventos en Argentina",
   description: site.description,
   path: "/",
 });
@@ -30,7 +30,7 @@ const steps = [
     bg: "bg-coral",
     fg: "text-cream",
     title: "Pagá sin sorpresas",
-    body: "El cargo de servicio se ve completo antes de pagar. Mercado Pago, sin salir de Tikeame.",
+    body: "El cargo de servicio se ve completo antes de pagar. Mercado Pago, sin salir de Tickeame.",
   },
   {
     n: "03",
@@ -123,7 +123,7 @@ export default function HomePage() {
             ¿Tienes un evento?
           </h2>
           <p className="relative mx-auto mt-[18px] max-w-[480px] text-[17px] font-semibold text-[#FFE4DF]">
-            La plata va a tu Mercado Pago. Tikeame nunca la custodia.
+            La plata va a tu Mercado Pago. Tickeame nunca la custodia.
           </p>
           <Link
             href="/organizadores"

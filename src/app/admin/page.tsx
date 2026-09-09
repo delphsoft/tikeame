@@ -46,18 +46,18 @@ export default async function AdminPage() {
       <AdminHeader active="resumen" />
       <div className="mx-auto max-w-[1160px] px-5 py-9 md:px-10">
         <div className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-coral">
-          Tikeame · plataforma
+          Tickeame · plataforma
         </div>
         <h1 className="mt-1 font-display text-[28px] uppercase">Super admin</h1>
         <p className="mt-1 max-w-xl text-[13px] text-muted">
-          Usuarios, órdenes, tickets y check-ins reales. Tikeame nunca custodia fondos: el cobro
+          Usuarios, órdenes, tickets y check-ins reales. Tickeame nunca custodia fondos: el cobro
           va por Mercado Pago.
         </p>
 
         <div className="mt-7 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "GMV cobrado", value: fmtARS(gmv), sub: `${paid.length} órdenes pagas` },
-            { label: "Comisión", value: fmtARS(take), sub: "fee Tikeame" },
+            { label: "Comisión", value: fmtARS(take), sub: "fee Tickeame" },
             { label: "Tickets", value: String(tickets.length), sub: `${used} usados en puerta` },
             {
               label: "Usuarios",

@@ -113,7 +113,7 @@ export default function OrganizadoresPage() {
           <Reveal delay={160}>
             <div className="font-display text-[42px] text-cream">0</div>
             <p className="mt-2 text-[13px] font-semibold text-muted2">
-              Plata que pasa por Tikeame. Nunca la custodiamos.
+              Plata que pasa por Tickeame. Nunca la custodiamos.
             </p>
           </Reveal>
         </div>

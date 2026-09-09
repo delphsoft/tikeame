@@ -4,7 +4,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata: Metadata = pageMeta({
   title: "Privacidad",
-  description: "Cómo Tikeame trata tus datos personales.",
+  description: "Cómo Tickeame trata tus datos personales.",
   path: "/legal/privacidad",
 });
 

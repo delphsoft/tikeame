@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Tikeame",
-    short_name: "Tikeame",
+    name: "Tickeame",
+    short_name: "Tickeame",
     description: "Entradas para fiestas y eventos en Argentina.",
     start_url: "/",
     display: "standalone",

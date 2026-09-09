@@ -75,7 +75,7 @@ function TicketInner() {
           <div className="overflow-hidden rounded-[20px] bg-ink">
             <div className="px-5 pt-5 pb-4">
               <div className="text-[11px] font-bold uppercase tracking-wide text-teal">Válido</div>
-              <div className="mt-1 text-[19px] font-extrabold text-cream">{ticket.eventTitle || "Tikeame"}</div>
+              <div className="mt-1 text-[19px] font-extrabold text-cream">{ticket.eventTitle || "Tickeame"}</div>
               <div className="mt-1 text-[13px] text-muted2">
                 {[ticket.eventDate, ticket.venue].filter(Boolean).join(" · ")}
               </div>

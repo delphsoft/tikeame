@@ -24,8 +24,8 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "Tikeame | Entradas para fiestas y eventos en Argentina",
-    template: "%s · Tikeame",
+    default: "Tickeame | Entradas para fiestas y eventos en Argentina",
+    template: "%s · Tickeame",
   },
   description: site.description,
   applicationName: site.name,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   },
   openGraph: {
-    title: "Tikeame | Entradas para fiestas y eventos en Argentina",
+    title: "Tickeame | Entradas para fiestas y eventos en Argentina",
     description: site.description,
     type: "website",
     locale: site.locale,
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tikeame | Entradas para fiestas y eventos en Argentina",
+    title: "Tickeame | Entradas para fiestas y eventos en Argentina",
     description: site.description,
   },
   icons: { icon: "/icon" },

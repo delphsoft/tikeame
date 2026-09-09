@@ -185,7 +185,7 @@ export default function CheckoutPage() {
           >
             {busy ? "Procesando…" : `Pagar ${fmtARS(total)}`}
           </button>
-          <div className="mt-2 text-center text-[11px] text-muted">Pagás en Mercado Pago, sin salir de Tikeame.</div>
+          <div className="mt-2 text-center text-[11px] text-muted">Pagás en Mercado Pago, sin salir de Tickeame.</div>
         </div>
       </div>
     </div>

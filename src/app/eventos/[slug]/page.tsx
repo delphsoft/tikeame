@@ -13,14 +13,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!event) {
     return pageMeta({
       title: "Evento",
-      description: "Evento en Tikeame.",
+      description: "Evento en Tickeame.",
       path: `/eventos/${slug}`,
       index: false,
     });
   }
   return pageMeta({
     title: event.name,
-    absoluteTitle: `${event.name} | Entradas ${event.venueName} | Tikeame`,
+    absoluteTitle: `${event.name} | Entradas ${event.venueName} | Tickeame`,
     description: event.description,
     path: `/eventos/${event.slug}`,
     image: event.image,

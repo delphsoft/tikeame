@@ -372,7 +372,7 @@ export function EventPage({ slug }: { slug: string }) {
 
       <div className="mx-auto max-w-[1240px] px-5 pt-11 md:px-10">
         <div className="text-xs font-extrabold uppercase tracking-[0.12em] text-coral">
-          Próximos eventos de Tikeame
+          Próximos eventos de Tickeame
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {events

@@ -79,7 +79,7 @@ export default function NuevoEventoPage() {
       venueName,
       venueAddress: venueAddress || venueName,
       mapsQuery: `${venueName} ${venueAddress} Buenos Aires`,
-      about: about.trim() || `Una noche de ${category.toLowerCase()} producida con Tikeame.`,
+      about: about.trim() || `Una noche de ${category.toLowerCase()} producida con Tickeame.`,
       lineup: lineup
         .split(",")
         .map((s) => s.trim())
@@ -259,7 +259,7 @@ export default function NuevoEventoPage() {
         <section className="mt-5 rounded-md border-2 border-ink bg-white p-6">
           <div className="flex items-center justify-between">
             <div className="text-xs font-extrabold uppercase tracking-[0.1em] text-coral">
-              Comisión Tikeame
+              Comisión Tickeame
             </div>
             <div className="font-display text-2xl text-coral">{commissionPct}%</div>
           </div>
@@ -273,7 +273,7 @@ export default function NuevoEventoPage() {
             className="mt-3 w-full accent-coral"
           />
           <p className="mt-2 text-xs text-muted">
-            Visible para tu público antes de pagar. Split 100% a tu Mercado Pago. Tikeame nunca
+            Visible para tu público antes de pagar. Split 100% a tu Mercado Pago. Tickeame nunca
             custodia la plata. Link público: tickeame.com.ar/eventos/{slugPreview}
           </p>
         </section>

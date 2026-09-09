@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getPublicEvent } from "@/lib/public-events";
 
-export const alt = "Evento en Tikeame";
+export const alt = "Evento en Tickeame";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -10,7 +10,7 @@ export default async function EventOg({ params }: { params: Promise<{ slug: stri
   const event = getPublicEvent(slug);
 
   const kicker = event?.category ?? "Evento";
-  const title = event?.title ?? "TIKEAME";
+  const title = event?.title ?? "TICKEAME";
   const sub = event ? `${event.dateLabel} · ${event.venue}` : "Entradas online";
 
   return new ImageResponse(
@@ -61,7 +61,7 @@ export default async function EventOg({ params }: { params: Promise<{ slug: stri
             fontWeight: 800,
           }}
         >
-          TIKEAME<span style={{ color: "#FF6B5B" }}>.</span>
+          TICKEAME<span style={{ color: "#FF6B5B" }}>.</span>
         </div>
       </div>
     ),

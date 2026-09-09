@@ -54,7 +54,7 @@ export const PUBLIC_EVENTS: PublicEvent[] = [
     subtitle: "Drum & Bass",
     name: "BASS NIGHT — Drum & Bass",
     description:
-      "Entradas para BASS NIGHT en Groove, Palermo. Viernes 8 de enero. Drum & bass y UK garage. Comprá con Mercado Pago en Tikeame.",
+      "Entradas para BASS NIGHT en Groove, Palermo. Viernes 8 de enero. Drum & bass y UK garage. Comprá con Mercado Pago en Tickeame.",
     startDate: "2027-01-08T00:30:00-03:00",
     dateLabel: "Vie 8 de ene",
     timeLabel: "00:30",

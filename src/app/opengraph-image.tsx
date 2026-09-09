@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Tikeame — El tikeame que te lleva a la fiesta.";
+export const alt = "Tickeame — El tikeame que te lleva a la fiesta.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -54,7 +54,7 @@ export default function OpenGraphImage() {
             fontWeight: 800,
           }}
         >
-          TIKEAME<span style={{ color: "#FF6B5B" }}>.</span>
+          TICKEAME<span style={{ color: "#FF6B5B" }}>.</span>
         </div>
       </div>
     ),

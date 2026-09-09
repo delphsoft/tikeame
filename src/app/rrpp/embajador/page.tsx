@@ -30,7 +30,7 @@ export default function EmbajadorPage() {
           <div className="mx-auto mb-3.5 flex size-16 items-center justify-center rounded-full bg-teal text-[26px]">
             ★
           </div>
-          <h1 className="text-xl font-extrabold text-cream">¡Sos Embajadora Tikeame!</h1>
+          <h1 className="text-xl font-extrabold text-cream">¡Sos Embajadora Tickeame!</h1>
           <p className="mt-2 text-[13px] leading-normal text-muted2">
             Fuiste a 3 eventos este año. Ya sos parte del círculo Embajador.
           </p>

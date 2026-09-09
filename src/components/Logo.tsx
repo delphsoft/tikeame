@@ -18,7 +18,7 @@ export function Logo({ href = "/", light = false, size = "md", className = "" }:
     <span
       className={`font-display tracking-[0.01em] ${light ? "text-cream" : "text-ink"} ${sizes[size]} ${className}`}
     >
-      TIKEAME<span className="text-coral">.</span>
+      TICKEAME<span className="text-coral">.</span>
     </span>
   );
   if (!href) return mark;

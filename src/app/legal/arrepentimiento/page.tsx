@@ -4,7 +4,7 @@ import { pageMeta } from "@/lib/seo";
 
 export const metadata: Metadata = pageMeta({
   title: "Derecho de arrepentimiento",
-  description: "Devolución de entradas compradas online en Tikeame, ley 24.240.",
+  description: "Devolución de entradas compradas online en Tickeame, ley 24.240.",
   path: "/legal/arrepentimiento",
 });
 

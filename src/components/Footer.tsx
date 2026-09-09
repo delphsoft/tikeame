@@ -17,7 +17,7 @@ export function Footer() {
         <a href="/legal/arrepentimiento" className="font-bold text-muted2">
           Arrepentimiento
         </a>
-        <span>Pagos vía Mercado Pago. Tikeame nunca custodia fondos.</span>
+        <span>Pagos vía Mercado Pago. Tickeame nunca custodia fondos.</span>
       </div>
     </footer>
   );

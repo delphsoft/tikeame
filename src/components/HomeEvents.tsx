@@ -109,8 +109,13 @@ export function HomeEvents() {
   // current (already location-filtered/sorted) list; otherwise fall back to
   // the closest match.
   const pinned = filtered.find((e) => e.featured);
-  const featured = pinned ?? filtered[0];
+  const closest = filtered[0];
+  const featured = pinned ?? closest;
   const rest = filtered.filter((e) => e.slug !== featured?.slug);
+  // The pin can push a farther event into the hero slot — don't claim it's
+  // nearby when it isn't, or the "Cerca" badge + real distance contradict
+  // each other (e.g. "Cerca · 274 km").
+  const isActuallyNearest = !pinned || pinned.slug === closest?.slug;
   const cityLabel =
     mode === "all"
       ? "Todo el país"
@@ -167,9 +172,9 @@ export function HomeEvents() {
             <div className="absolute inset-0 bg-gradient-to-t from-ink/80 to-transparent" />
             <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
               <span className="rounded-full bg-coral px-3 py-1 text-[11px] font-extrabold uppercase text-white">
-                Cerca
+                {isActuallyNearest ? "Cerca" : "Destacado"}
               </span>
-              {origin && (
+              {origin && isActuallyNearest && (
                 <span className="rounded-full bg-cream/15 px-3 py-1 text-[11px] font-extrabold text-cream">
                   {formatKm(haversineKm(origin, { lat: featured.lat, lng: featured.lng }))}
                 </span>

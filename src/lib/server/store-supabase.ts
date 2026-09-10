@@ -1,6 +1,15 @@
 import { ConfigError } from "./env";
 import { hashPassword } from "./password";
-import type { OrderRow, Role, ScanRow, StoreDriver, TicketRow, User } from "./types";
+import type {
+  EventRecord,
+  OrderRow,
+  OrganizerProfile,
+  Role,
+  ScanRow,
+  StoreDriver,
+  TicketRow,
+  User,
+} from "./types";
 
 function creds() {
   const url = process.env.SUPABASE_URL;
@@ -59,14 +68,47 @@ type TicketDb = {
 
 type ScanDb = { id: string; ticket_id: string; payload: ScanRow };
 
-function toUser(row: UserRow): User {
+function toUser(row: UserRow, profile?: OrganizerProfile | null): User {
   return {
     id: row.id,
     name: row.name,
     email: row.email,
     role: row.role,
     passwordHash: row.password_hash,
+    profile: profile ?? null,
   };
+}
+
+type ProfileDb = {
+  user_id: string;
+  cuit: string | null;
+  razon_social: string | null;
+  condicion_iva: string | null;
+  domicilio_fiscal: string | null;
+  fee_plan: string | null;
+};
+
+type EventDb = { slug: string; organizer_id: string | null; status: string; payload: EventRecord };
+
+function toProfile(row: ProfileDb): OrganizerProfile {
+  return {
+    cuit: row.cuit,
+    razonSocial: row.razon_social,
+    condicionIva: row.condicion_iva,
+    domicilioFiscal: row.domicilio_fiscal,
+    feePlan: row.fee_plan === "monthly" ? "monthly" : "percent",
+  };
+}
+
+async function loadProfile(userId: string): Promise<OrganizerProfile | null> {
+  try {
+    const rows = await sb<ProfileDb[]>(
+      `tikeame_organizer_profiles?user_id=eq.${encodeURIComponent(userId)}&select=*`,
+    );
+    return rows?.[0] ? toProfile(rows[0]) : null;
+  } catch {
+    return null;
+  }
 }
 
 function toOrder(row: OrderDb): OrderRow {
@@ -76,11 +118,15 @@ function toOrder(row: OrderDb): OrderRow {
 export const supabaseStore: StoreDriver = {
   async findUserByEmail(email) {
     const rows = await sb<UserRow[]>(`tikeame_users?email=eq.${encodeURIComponent(email.toLowerCase())}&select=*`);
-    return rows?.[0] ? toUser(rows[0]) : null;
+    if (!rows?.[0]) return null;
+    const profile = await loadProfile(rows[0].id);
+    return toUser(rows[0], profile);
   },
   async findUserById(id) {
     const rows = await sb<UserRow[]>(`tikeame_users?id=eq.${encodeURIComponent(id)}&select=*`);
-    return rows?.[0] ? toUser(rows[0]) : null;
+    if (!rows?.[0]) return null;
+    const profile = await loadProfile(rows[0].id);
+    return toUser(rows[0], profile);
   },
   async createUser(input) {
     const user: User = {
@@ -89,6 +135,7 @@ export const supabaseStore: StoreDriver = {
       email: input.email.toLowerCase(),
       role: input.role,
       passwordHash: hashPassword(input.password),
+      profile: input.profile ?? null,
     };
     await sb("tikeame_users", {
       method: "POST",
@@ -100,11 +147,65 @@ export const supabaseStore: StoreDriver = {
         password_hash: user.passwordHash,
       }),
     });
+    if (input.profile) {
+      await sb("tikeame_organizer_profiles?on_conflict=user_id", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify({
+          user_id: user.id,
+          cuit: input.profile.cuit,
+          razon_social: input.profile.razonSocial,
+          condicion_iva: input.profile.condicionIva,
+          domicilio_fiscal: input.profile.domicilioFiscal,
+          fee_plan: input.profile.feePlan,
+        }),
+      });
+    }
     return user;
+  },
+  async getOrganizerProfile(userId) {
+    return loadProfile(userId);
+  },
+  async putEvent(event) {
+    await sb("tikeame_events?on_conflict=slug", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({
+        slug: event.slug,
+        organizer_id: event.organizerId,
+        status: event.status,
+        payload: event,
+      }),
+    });
+  },
+  async getEvent(slug) {
+    const rows = await sb<EventDb[]>(`tikeame_events?slug=eq.${encodeURIComponent(slug)}&select=*`);
+    return rows?.[0]?.payload ?? null;
+  },
+  async listEvents(filter) {
+    const params = new URLSearchParams();
+    params.set("select", "*");
+    params.set("order", "created_at.desc");
+    params.set("limit", "200");
+    if (filter?.organizerId) params.set("organizer_id", `eq.${filter.organizerId}`);
+    if (filter?.status) params.set("status", `eq.${filter.status}`);
+    const rows = await sb<EventDb[]>(`tikeame_events?${params.toString()}`);
+    return (rows ?? []).map((r) => r.payload);
+  },
+  async organizerMonthlyGmv(organizerId, when = new Date()) {
+    const start = new Date(when.getFullYear(), when.getMonth(), 1).toISOString();
+    const end = new Date(when.getFullYear(), when.getMonth() + 1, 1).toISOString();
+    const rows = await sb<OrderDb[]>(
+      `tikeame_orders?status=eq.paid&created_at=gte.${encodeURIComponent(start)}&created_at=lt.${encodeURIComponent(end)}&select=*`,
+    );
+    return (rows ?? [])
+      .map(toOrder)
+      .filter((o) => o.organizerId === organizerId)
+      .reduce((s, o) => s + o.subtotal, 0);
   },
   async listUsers() {
     const rows = await sb<UserRow[]>("tikeame_users?select=*&order=created_at.desc&limit=300");
-    return (rows ?? []).map(toUser);
+    return (rows ?? []).map((row) => toUser(row));
   },
   async putOrder(order) {
     await sb("tikeame_orders?on_conflict=id", {

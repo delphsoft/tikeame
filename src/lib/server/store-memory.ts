@@ -2,13 +2,24 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { hosted } from "./env";
 import { hashPassword } from "./password";
-import type { OrderRow, Role, ScanRow, StoreDriver, TicketRow, User } from "./types";
+import type {
+  EventRecord,
+  OrderRow,
+  OrganizerProfile,
+  Role,
+  ScanRow,
+  StoreDriver,
+  TicketRow,
+  User,
+} from "./types";
 
 type Db = {
   users: User[];
   orders: OrderRow[];
   tickets: TicketRow[];
   scans: ScanRow[];
+  events: EventRecord[];
+  profiles: Record<string, OrganizerProfile>;
 };
 
 function emptyDb(): Db {
@@ -37,7 +48,7 @@ function emptyDb(): Db {
           passwordHash: hashPassword("tikeame"),
         },
       ];
-  return { users, orders: [], tickets: [], scans: [] };
+  return { users, orders: [], tickets: [], scans: [], events: [], profiles: {} };
 }
 
 const g = globalThis as typeof globalThis & { __tikeameDb?: Db };
@@ -80,7 +91,13 @@ export const memoryStore: StoreDriver = {
   async findUserById(id) {
     return load().users.find((u) => u.id === id) ?? null;
   },
-  async createUser(input: { name: string; email: string; password: string; role: Role }) {
+  async createUser(input: {
+    name: string;
+    email: string;
+    password: string;
+    role: Role;
+    profile?: OrganizerProfile | null;
+  }) {
     const dbx = load();
     if (dbx.users.some((u) => u.email.toLowerCase() === input.email.toLowerCase())) {
       throw new Error("Ese email ya está registrado");
@@ -91,10 +108,45 @@ export const memoryStore: StoreDriver = {
       email: input.email.toLowerCase(),
       role: input.role,
       passwordHash: hashPassword(input.password),
+      profile: input.profile ?? null,
     };
     dbx.users.push(user);
+    if (input.profile) dbx.profiles[user.id] = input.profile;
     save(dbx);
     return user;
+  },
+  async getOrganizerProfile(userId) {
+    return load().profiles[userId] ?? null;
+  },
+  async putEvent(event) {
+    const dbx = load();
+    const i = dbx.events.findIndex((e) => e.slug === event.slug);
+    if (i >= 0) dbx.events[i] = event;
+    else dbx.events.unshift(event);
+    save(dbx);
+  },
+  async getEvent(slug) {
+    return load().events.find((e) => e.slug === slug) ?? null;
+  },
+  async listEvents(filter) {
+    return load().events.filter((e) => {
+      if (filter?.organizerId && e.organizerId !== filter.organizerId) return false;
+      if (filter?.status && e.status !== filter.status) return false;
+      return true;
+    });
+  },
+  async organizerMonthlyGmv(organizerId, when = new Date()) {
+    const start = new Date(when.getFullYear(), when.getMonth(), 1).toISOString();
+    const end = new Date(when.getFullYear(), when.getMonth() + 1, 1).toISOString();
+    return load()
+      .orders.filter(
+        (o) =>
+          o.status === "paid" &&
+          o.organizerId === organizerId &&
+          o.createdAt >= start &&
+          o.createdAt < end,
+      )
+      .reduce((s, o) => s + o.subtotal, 0);
   },
   async listUsers() {
     return load().users;

@@ -12,6 +12,7 @@ import { useCart } from "@/lib/cart";
 import { FAQS, GALLERY, SPONSORS } from "@/lib/data";
 import { eventSold, eventCapacity, useEvents } from "@/lib/events";
 import { fmtARS, pad2 } from "@/lib/money";
+import { formatPct, quoteFees } from "@/lib/pricing";
 
 function useCountdown(target: Date) {
   const [now, setNow] = useState(() => Date.now());
@@ -44,9 +45,9 @@ export function EventPage({ slug }: { slug: string }) {
 
   const tickets = event?.tickets ?? [];
   const subtotal = tickets.reduce((s, t) => s + qty[t.key] * t.price, 0);
-  const commissionPct = event?.commissionPct ?? 3;
-  const fee = subtotal * (commissionPct / 100);
-  const total = subtotal + fee;
+  const quote = quoteFees(subtotal, { method: "card" });
+  const fee = quote.fee;
+  const total = quote.total;
   const itemCount = tickets.reduce((s, t) => s + qty[t.key], 0);
   const ticketsLeft = event ? Math.max(0, eventCapacity(event) - eventSold(event)) : 0;
   const rich = slug === "neon";
@@ -294,15 +295,19 @@ export function EventPage({ slug }: { slug: string }) {
               <span>{fmtARS(subtotal)}</span>
             </div>
             <div className="mt-1.5 flex justify-between text-[13px] font-semibold text-muted2">
-              <span>Cargo de servicio ({commissionPct}%)</span>
+              <span>Cargo de servicio ({formatPct(quote.totalPct)})</span>
               <span>{fmtARS(fee)}</span>
+            </div>
+            <div className="mt-1 text-[11px] text-muted2">
+              Incluye procesamiento MP {formatPct(quote.processorPct)} + Tickeame {formatPct(quote.platformPct)}.
+              Transferencia sale más barato en el checkout.
             </div>
             <div className="mt-3.5 flex justify-between text-[19px] font-extrabold text-cream">
               <span>Total</span>
               <span>{fmtARS(total)}</span>
             </div>
             <div className="mt-3.5 rounded-md bg-teal/16 px-3 py-2.5 text-xs font-bold text-teal">
-              El organizador recibe {fmtARS(subtotal)} — el 100%. Sin cargos escondidos.
+              El organizador recibe {fmtARS(subtotal)} — el 100% del precio de la entrada.
             </div>
             <button
               type="button"

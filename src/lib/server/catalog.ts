@@ -100,3 +100,28 @@ const ALL = [NEON, ...EXTRA];
 export function getCatalogEvent(slug: string) {
   return ALL.find((e) => e.slug === slug) ?? null;
 }
+
+export async function resolveCatalogEvent(slug: string) {
+  const { getEvent } = await import("./store");
+  try {
+    const live = await getEvent(slug);
+    if (live) {
+      return {
+        slug: live.slug,
+        title: live.title,
+        subtitle: live.subtitle,
+        dateLabel: live.dateLabel,
+        venue: live.venue,
+        commissionPct: 0,
+        tickets: live.tickets.map((t) => ({ key: t.key, name: t.name, price: t.price })),
+        organizerId: live.organizerId,
+        organizerName: live.organizerName,
+      } satisfies CatalogEvent & { organizerId: string; organizerName: string };
+    }
+  } catch {
+    /* demo fallback */
+  }
+  const demo = getCatalogEvent(slug);
+  if (!demo) return null;
+  return { ...demo, organizerId: null as string | null, organizerName: "Tiko Producciones" };
+}

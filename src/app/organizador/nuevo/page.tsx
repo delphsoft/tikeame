@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { OrganizerHeader } from "@/components/OrganizerHeader";
 import type { TicketKey } from "@/lib/data";
 import {
@@ -13,6 +13,8 @@ import {
   type EventStatus,
   type EventTicket,
 } from "@/lib/events";
+import { formatPct } from "@/lib/pricing";
+import { useSession } from "@/lib/session";
 
 type TicketDraft = { key: TicketKey; name: string; price: string; cap: string; note: string };
 
@@ -24,7 +26,9 @@ const EMPTY_TICKETS: TicketDraft[] = [
 
 export default function NuevoEventoPage() {
   const router = useRouter();
+  const { user } = useSession();
   const { events, addEvent } = useEvents();
+  const [planLabel, setPlanLabel] = useState("15% · primer tramo");
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [category, setCategory] = useState("Electrónica");
@@ -34,7 +38,6 @@ export default function NuevoEventoPage() {
   const [venueAddress, setVenueAddress] = useState("");
   const [about, setAbout] = useState("");
   const [lineup, setLineup] = useState("");
-  const [commissionPct, setCommissionPct] = useState(3);
   const [hero, setHero] = useState(HERO_OPTIONS[0].src);
   const [tickets, setTickets] = useState<TicketDraft[]>(EMPTY_TICKETS);
   const [error, setError] = useState("");
@@ -48,7 +51,18 @@ export default function NuevoEventoPage() {
     setTickets((rows) => rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   }
 
-  function save(status: EventStatus) {
+  useEffect(() => {
+    fetch("/api/organizer/plan")
+      .then((r) => r.json())
+      .then((d: { platformPct?: number; tierLabel?: string }) => {
+        if (typeof d.platformPct === "number") {
+          setPlanLabel(`${formatPct(d.platformPct)} · ${d.tierLabel ?? "tramo actual"}`);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  async function save(status: EventStatus) {
     if (!title.trim() || !venueName.trim() || !dateISO) {
       setError("Completá nombre, fecha y venue.");
       return;
@@ -67,7 +81,7 @@ export default function NuevoEventoPage() {
       setError("Sumá al menos un tipo de entrada.");
       return;
     }
-    addEvent({
+    const event = {
       slug: slugPreview,
       title: title.trim(),
       subtitle: subtitle.trim() || category,
@@ -85,16 +99,27 @@ export default function NuevoEventoPage() {
         .map((s) => s.trim())
         .filter(Boolean),
       hero,
-      commissionPct,
+      commissionPct: 0,
       status,
-      organizerId: "tiko",
-      organizerName: "Tiko Producciones",
+      organizerId: user?.id || "tiko",
+      organizerName: user?.name || "Tiko Producciones",
       featured: false,
-      cityId: "caba",
+      cityId: "caba" as const,
       lat: -34.6037,
       lng: -58.3816,
       tickets: parsed,
+    };
+    const res = await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(event),
     });
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      setError(data.error || "No se pudo guardar el evento. ¿Corriste schema-v2.sql?");
+      return;
+    }
+    addEvent(event);
     router.push(`/organizador/${slugPreview}`);
   }
 
@@ -259,22 +284,13 @@ export default function NuevoEventoPage() {
         <section className="mt-5 rounded-md border-2 border-ink bg-white p-6">
           <div className="flex items-center justify-between">
             <div className="text-xs font-extrabold uppercase tracking-[0.1em] text-coral">
-              Comisión Tickeame
+              Tu comisión ahora
             </div>
-            <div className="font-display text-2xl text-coral">{commissionPct}%</div>
+            <div className="font-display text-2xl text-coral">{planLabel.split(" · ")[0]}</div>
           </div>
-          <input
-            type="range"
-            min={2}
-            max={5}
-            step={0.5}
-            value={commissionPct}
-            onChange={(e) => setCommissionPct(Number(e.target.value))}
-            className="mt-3 w-full accent-coral"
-          />
           <p className="mt-2 text-xs text-muted">
-            Visible para tu público antes de pagar. Split 100% a tu Mercado Pago. Tickeame nunca
-            custodia la plata. Link público: tickeame.com.ar/eventos/{slugPreview}
+            {planLabel}. El comprador ve un solo cargo (procesamiento MP + Tickeame). Vos recibís el
+            100% del precio de la entrada. Link: tickeame.com.ar/eventos/{slugPreview}
           </p>
         </section>
 

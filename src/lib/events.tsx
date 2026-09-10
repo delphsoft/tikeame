@@ -11,6 +11,7 @@ import {
 } from "react";
 import { EVENT, TICKET_TIERS, type TicketKey } from "./data";
 import { CITIES, type CityId } from "./geo";
+import { useSession } from "./session";
 
 export type EventStatus = "draft" | "on_sale" | "paused" | "sold_out";
 
@@ -366,6 +367,7 @@ type EventsContextValue = {
 const EventsContext = createContext<EventsContextValue | null>(null);
 
 export function EventsProvider({ children }: { children: ReactNode }) {
+  const { user } = useSession();
   const [created, setCreated] = useState<ManagedEvent[]>([]);
   const [statusMap, setStatusMap] = useState<Record<string, EventStatus>>({});
 
@@ -379,9 +381,22 @@ export function EventsProvider({ children }: { children: ReactNode }) {
       } catch {
         /* ignore */
       }
+      const url = user?.role === "organizer" || user?.role === "admin" ? "/api/events?mine=1" : "/api/events";
+      fetch(url)
+        .then((r) => r.json())
+        .then((d: { events?: ManagedEvent[] }) => {
+          if (Array.isArray(d.events) && d.events.length) {
+            setCreated((prev) => {
+              const remote = d.events as ManagedEvent[];
+              const merged = [...remote, ...prev.filter((p) => !remote.some((r) => r.slug === p.slug))];
+              return merged;
+            });
+          }
+        })
+        .catch(() => {});
     });
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [user?.role]);
 
   const addEvent = useCallback((event: ManagedEvent) => {
     setCreated((prev) => {
@@ -411,7 +426,14 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     }));
   }, [created, statusMap]);
 
-  const mine = useMemo(() => events.filter((e) => e.organizerId === "tiko"), [events]);
+  const mine = useMemo(() => {
+    if (user?.role === "admin") return events;
+    if (user?.id) {
+      const own = events.filter((e) => e.organizerId === user.id);
+      if (own.length) return own;
+    }
+    return events.filter((e) => e.organizerId === "tiko");
+  }, [events, user]);
 
   const getEvent = useCallback((slug: string) => events.find((e) => e.slug === slug), [events]);
 

@@ -77,12 +77,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={websiteJsonLd()} />
         <CartProvider>
-          <EventsProvider>
-            <SessionProvider>
+          <SessionProvider>
+            <EventsProvider>
               <div className="app-shell">{children}</div>
               <AppTabs />
-            </SessionProvider>
-          </EventsProvider>
+            </EventsProvider>
+          </SessionProvider>
         </CartProvider>
         <Analytics />
       </body>

@@ -3,9 +3,9 @@ import { requirePersistentStore, supabaseConfigured } from "./env";
 import { verifyPassword } from "./password";
 import { memoryStore } from "./store-memory";
 import { supabaseStore } from "./store-supabase";
-import type { OrderRow, Role, ScanRow, StoreDriver, TicketRow } from "./types";
+import type { EventRecord, EventStatus, OrderRow, OrganizerProfile, Role, ScanRow, StoreDriver, TicketRow } from "./types";
 
-export type { OrderItem, OrderRow, Role, ScanRow, TicketRow, User } from "./types";
+export type { EventRecord, EventStatus, OrderItem, OrderRow, OrganizerProfile, Role, ScanRow, TicketRow, User } from "./types";
 
 function driver(): StoreDriver {
   requirePersistentStore();
@@ -39,8 +39,34 @@ export async function authenticate(email: string, password: string) {
   return user;
 }
 
-export async function createUser(input: { name: string; email: string; password: string; role: Role }) {
+export async function createUser(input: {
+  name: string;
+  email: string;
+  password: string;
+  role: Role;
+  profile?: OrganizerProfile | null;
+}) {
   return driver().createUser(input);
+}
+
+export async function getOrganizerProfile(userId: string) {
+  return driver().getOrganizerProfile(userId);
+}
+
+export async function putEvent(event: EventRecord) {
+  return driver().putEvent(event);
+}
+
+export async function getEvent(slug: string) {
+  return driver().getEvent(slug);
+}
+
+export async function listEvents(filter?: { organizerId?: string; status?: EventStatus }) {
+  return driver().listEvents(filter);
+}
+
+export async function organizerMonthlyGmv(organizerId: string, when?: Date) {
+  return driver().organizerMonthlyGmv(organizerId, when);
 }
 
 export async function listUsers() {

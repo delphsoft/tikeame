@@ -41,6 +41,7 @@ export async function createPreference(input: {
   total: number;
   fee: number;
   email: string;
+  paymentMethod?: "card" | "transfer";
 }) {
   const token = process.env.MP_ACCESS_TOKEN;
   if (!token) return null;
@@ -66,6 +67,13 @@ export async function createPreference(input: {
     notification_url: process.env.MP_WEBHOOK_URL || `${mpPublicUrl()}/api/mp/webhook`,
     metadata: { orderId: input.orderId },
   };
+
+  if (input.paymentMethod === "transfer") {
+    body.excluded_payment_types = [{ id: "credit_card" }, { id: "debit_card" }, { id: "prepaid_card" }];
+  }
+  if (input.paymentMethod === "card") {
+    body.excluded_payment_types = [{ id: "ticket" }, { id: "atm" }, { id: "bank_transfer" }];
+  }
 
   if (input.fee > 0) body.marketplace_fee = Number(input.fee.toFixed(2));
 

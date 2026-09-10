@@ -6,14 +6,19 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { useCart } from "@/lib/cart";
-import { COMMISSION_PCT, TICKET_TIERS } from "@/lib/data";
+import { TICKET_TIERS } from "@/lib/data";
 import { fmtARS } from "@/lib/money";
+import { formatPct, quoteFees, type PaymentMethod } from "@/lib/pricing";
 import { useSession } from "@/lib/session";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useSession();
-  const { qty, eventSlug, itemCount, subtotal, fee, total, setOrder } = useCart();
+  const { qty, eventSlug, itemCount, subtotal, setOrder } = useCart();
+  const [method, setMethod] = useState<PaymentMethod>("card");
+  const quote = quoteFees(subtotal, { method });
+  const fee = quote.fee;
+  const total = quote.total;
   const [dni, setDni] = useState("");
   const [iva, setIva] = useState("Consumidor Final");
   const [name, setName] = useState(user?.name ?? "");
@@ -46,6 +51,7 @@ export default function CheckoutPage() {
           iva,
           name,
           email,
+          paymentMethod: method,
         }),
       });
       const data = (await res.json()) as {
@@ -118,7 +124,15 @@ export default function CheckoutPage() {
               <span>{fmtARS(subtotal)}</span>
             </div>
             <div className="flex justify-between text-[13px] text-muted">
-              <span>Cargo de servicio ({COMMISSION_PCT}%)</span>
+              <span>Procesamiento MP ({formatPct(quote.processorPct)})</span>
+              <span>{fmtARS(quote.processorFee)}</span>
+            </div>
+            <div className="flex justify-between text-[13px] text-muted">
+              <span>Tickeame ({formatPct(quote.platformPct)})</span>
+              <span>{fmtARS(quote.platformFee)}</span>
+            </div>
+            <div className="flex justify-between text-[13px] text-muted">
+              <span>Cargo de servicio ({formatPct(quote.totalPct)})</span>
               <span>{fmtARS(fee)}</span>
             </div>
             <div className="my-0.5 h-px bg-border" />
@@ -127,8 +141,26 @@ export default function CheckoutPage() {
               <span>{fmtARS(total)}</span>
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setMethod("card")}
+              className={`rounded-2xl border-2 px-3 py-3 text-left ${method === "card" ? "border-ink bg-white" : "border-border bg-cream"}`}
+            >
+              <div className="text-sm font-extrabold">Tarjeta</div>
+              <div className="text-[11px] text-muted">MP 8,5%</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMethod("transfer")}
+              className={`rounded-2xl border-2 px-3 py-3 text-left ${method === "transfer" ? "border-ink bg-white" : "border-border bg-cream"}`}
+            >
+              <div className="text-sm font-extrabold">Transferencia</div>
+              <div className="text-[11px] text-muted">Más barato · MP 2%</div>
+            </button>
+          </div>
           <div className="rounded-[14px] bg-[#E9F8F2] px-4 py-3.5 text-[12.5px] font-semibold leading-normal text-[#1F6E58]">
-            El organizador recibe {fmtARS(subtotal)} — el 100% de lo que pagás por tu entrada.
+            El organizador recibe {fmtARS(subtotal)} — el 100% del precio de la entrada.
           </div>
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold text-ink">Nombre</span>

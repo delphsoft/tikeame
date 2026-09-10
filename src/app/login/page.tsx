@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { Logo } from "@/components/Logo";
+import { formatCuit } from "@/lib/cuit";
+import { MONTHLY_PLAN_ARS, type FeePlan } from "@/lib/pricing";
 import { useSession } from "@/lib/session";
 
 type Audience = "buyer" | "organizer";
@@ -29,6 +31,11 @@ function LoginForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [cuit, setCuit] = useState("");
+  const [razonSocial, setRazonSocial] = useState("");
+  const [condicionIva, setCondicionIva] = useState("Responsable Inscripto");
+  const [domicilioFiscal, setDomicilioFiscal] = useState("");
+  const [feePlan, setFeePlan] = useState<FeePlan>("percent");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const isRegister = mode === "register";
@@ -62,6 +69,11 @@ function LoginForm() {
           email,
           password,
           role: audience,
+          cuit,
+          razonSocial,
+          condicionIva,
+          domicilioFiscal,
+          feePlan,
         }),
       });
       const data = (await res.json()) as {
@@ -189,7 +201,71 @@ function LoginForm() {
               className="mt-1.5 w-full rounded border-2 border-border px-3.5 py-[11px] text-sm text-ink placeholder:text-muted2"
             />
           </label>
-          <label className="mb-1.5 block">
+          {isRegister && isOrganizer && (
+            <div className="mt-3 space-y-3.5">
+              <label className="block">
+                <span className="text-[11px] font-extrabold uppercase text-muted">CUIT</span>
+                <input
+                  value={cuit}
+                  onChange={(e) => setCuit(formatCuit(e.target.value))}
+                  placeholder="30-71234567-9"
+                  className="mt-1.5 w-full rounded border-2 border-border px-3.5 py-[11px] text-sm text-ink placeholder:text-muted2"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[11px] font-extrabold uppercase text-muted">Razón social</span>
+                <input
+                  value={razonSocial}
+                  onChange={(e) => setRazonSocial(e.target.value)}
+                  className="mt-1.5 w-full rounded border-2 border-border px-3.5 py-[11px] text-sm text-ink"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[11px] font-extrabold uppercase text-muted">Condición IVA</span>
+                <select
+                  value={condicionIva}
+                  onChange={(e) => setCondicionIva(e.target.value)}
+                  className="mt-1.5 w-full rounded border-2 border-border px-3.5 py-[11px] text-sm text-ink"
+                >
+                  <option>Responsable Inscripto</option>
+                  <option>Monotributista</option>
+                  <option>Exento</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-[11px] font-extrabold uppercase text-muted">Domicilio fiscal</span>
+                <input
+                  value={domicilioFiscal}
+                  onChange={(e) => setDomicilioFiscal(e.target.value)}
+                  className="mt-1.5 w-full rounded border-2 border-border px-3.5 py-[11px] text-sm text-ink"
+                />
+              </label>
+              <div>
+                <span className="text-[11px] font-extrabold uppercase text-muted">Plan</span>
+                <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setFeePlan("percent")}
+                    className={`rounded py-2 text-[11px] font-extrabold ${feePlan === "percent" ? "bg-ink text-cream" : "bg-cream text-muted"}`}
+                  >
+                    % por venta
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeePlan("monthly")}
+                    className={`rounded py-2 text-[11px] font-extrabold ${feePlan === "monthly" ? "bg-ink text-cream" : "bg-cream text-muted"}`}
+                  >
+                    Mensual ${MONTHLY_PLAN_ARS.toLocaleString("es-AR")}
+                  </button>
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted">
+                  El % baja con el volumen. El mensual todavía no se cobra solo — lo activamos a mano.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <label className="mb-1.5 mt-3.5 block">
             <span className="text-[11px] font-extrabold uppercase text-muted">Contraseña</span>
             <input
               type="password"

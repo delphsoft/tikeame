@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
+import { quoteFees, type PaymentMethod } from "@/lib/pricing";
 import { currentUser } from "@/lib/server/auth";
-import { getCatalogEvent } from "@/lib/server/catalog";
+import { resolveCatalogEvent } from "@/lib/server/catalog";
 import { ConfigError, demoPayAllowed, hosted, supabaseConfigured } from "@/lib/server/env";
 import { fulfillOrder } from "@/lib/server/fulfill";
 import { createPreference, mpEnabled } from "@/lib/server/mp";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
-import { newOrderId, newViewToken, putOrder, type OrderItem, type OrderRow } from "@/lib/server/store";
+import {
+  getOrganizerProfile,
+  newOrderId,
+  newViewToken,
+  organizerMonthlyGmv,
+  putOrder,
+  type OrderItem,
+  type OrderRow,
+} from "@/lib/server/store";
 
 export async function POST(req: Request) {
   if (!rateLimit(`checkout:${clientIp(req)}`, 20, 15 * 60 * 1000)) {
@@ -32,9 +41,10 @@ export async function POST(req: Request) {
     iva?: string;
     name?: string;
     email?: string;
+    paymentMethod?: PaymentMethod;
   };
 
-  const event = getCatalogEvent(body.eventSlug || "neon");
+  const event = await resolveCatalogEvent(body.eventSlug || "neon");
   if (!event) return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
 
   const qty = body.qty ?? {};
@@ -52,8 +62,17 @@ export async function POST(req: Request) {
   }
 
   const subtotal = items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
-  const fee = subtotal * (event.commissionPct / 100);
-  const total = subtotal + fee;
+  const method: PaymentMethod = body.paymentMethod === "transfer" ? "transfer" : "card";
+  const organizerId = event.organizerId;
+  const profile = organizerId ? await getOrganizerProfile(organizerId) : null;
+  const monthlyGmv = organizerId ? await organizerMonthlyGmv(organizerId) : 0;
+  const quote = quoteFees(subtotal, {
+    method,
+    plan: profile?.feePlan ?? "percent",
+    monthlyGmv,
+  });
+  const fee = quote.fee;
+  const total = quote.total;
   const user = await currentUser();
   const email = (body.email || user?.email || "").trim().toLowerCase();
   if (!email || !email.includes("@")) {
@@ -73,6 +92,10 @@ export async function POST(req: Request) {
     items,
     subtotal,
     fee,
+    processorFee: quote.processorFee,
+    platformFee: quote.platformFee,
+    paymentMethod: method,
+    organizerId,
     total,
     status: "pending",
     mpPreferenceId: null,
@@ -94,8 +117,9 @@ export async function POST(req: Request) {
         orderId: order.id,
         title: `${event.title} — entradas`,
         total,
-        fee,
+        fee: quote.platformFee,
         email,
+        paymentMethod: method,
       });
       if (pref) {
         order.mpPreferenceId = pref.id;

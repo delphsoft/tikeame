@@ -5,7 +5,7 @@ export function mpEnabled() {
   return Boolean(process.env.MP_ACCESS_TOKEN);
 }
 
-/** Live origin for MP redirects/webhooks. Use vercel.app until nic.ar DNS is live. */
+/** Live origin for MP redirects/webhooks. */
 function mpPublicUrl() {
   const explicit = process.env.MP_PUBLIC_URL?.replace(/\/$/, "");
   if (explicit) return explicit;

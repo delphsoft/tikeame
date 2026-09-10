@@ -1,8 +1,8 @@
-# Tikeame
+# Tickeame
 
 Ticketera argentina. La plata de tus entradas, en tu cuenta al toque.
 
-Split automático por Mercado Pago Marketplace — Tikeame nunca custodia fondos.
+Split automático por Mercado Pago Marketplace — Tickeame nunca custodia fondos.
 
 Este repo es el prototipo navegable armado a partir de las pantallas de Tiko (landing, evento NEÓN, checkout, confirmación, panel organizador, check-in y RRPP).
 
@@ -24,7 +24,7 @@ Este repo es el prototipo navegable armado a partir de las pantallas de Tiko (la
 7. Panel organizador (crear eventos) → `/organizador`
 8. Super admin → `/admin`
 
-El login no valida credenciales. Las compras y el scanner viven en el cliente (sessionStorage).
+Login de comprador / organizador / admin. Las órdenes y el check-in van al servidor (Supabase en Vercel).
 
 SEO: las páginas públicas (`/`, `/organizadores`, `/eventos/*`) tienen title, description, canonical, Open Graph y JSON-LD. Paneles, checkout y `/fondos` van con `noindex`.
 
@@ -37,8 +37,8 @@ En Vercel / `.env.local`:
 ```
 MP_ACCESS_TOKEN=APP_USR-…   # o TEST-… para sandbox
 MP_PUBLIC_KEY=APP_USR-…     # public key Checkout Pro
-MP_PUBLIC_URL=https://tikeame.vercel.app
-MP_WEBHOOK_URL=https://tikeame.vercel.app/api/mp/webhook
+MP_PUBLIC_URL=https://tickeame.com.ar
+MP_WEBHOOK_URL=https://tickeame.com.ar/api/mp/webhook
 MP_WEBHOOK_SECRET=          # firma x-signature
 RESEND_API_KEY=re_…         # mail de entradas
 RESEND_FROM=Tickeame <hola@tickeame.com.ar>
@@ -52,7 +52,7 @@ Corrê `supabase/schema.sql` en el SQL editor del proyecto. RLS on, sin policies
 
 Usuarios demo **solo en local**: `hola@tickeame.com.ar`, `organizador@tickeame.com.ar`, `admin@tickeame.com.ar` / `tikeame`.
 
-El check-in (`/organizador/checkin`) pide sesión de organizador o admin, valida el ID del QR y lo quema. Las órdenes se ven con la cookie del comprador o el `t` de la URL de confirmación. El QR lo genera Tikeame (`/api/qr/...`), no un tercero.
+El check-in (`/organizador/checkin`) pide sesión de organizador o admin, valida el ID del QR y lo quema. Las órdenes se ven con la cookie del comprador o el `t` de la URL de confirmación. El QR lo genera Tickeame (`/api/qr/...`), no un tercero. Corrê también `supabase/schema-v2.sql` (eventos + perfil fiscal).
 
 ## Desarrollo
 

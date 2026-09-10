@@ -11,7 +11,7 @@ export const site = {
   description:
     "Comprá entradas para fiestas y eventos en Argentina. Cargo visible antes de pagar, QR de un solo ingreso y Mercado Pago. Tickeame nunca custodia fondos.",
   organizerDescription:
-    "Ticketera para productoras. Split automático a tu cuenta de Mercado Pago, comisión 2–5% visible, check-in y RRPP por ingresos reales. Tickeame nunca custodia tu plata.",
+    "Ticketera para productoras. Split automático a tu cuenta de Mercado Pago, cargo de servicio en dos capas (procesador + Tickeame), check-in y RRPP por ingresos reales. Tickeame nunca custodia tu plata.",
   keywords: [
     "entradas online Argentina",
     "ticketera argentina",

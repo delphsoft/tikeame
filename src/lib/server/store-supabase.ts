@@ -14,8 +14,8 @@ import type {
 
 function creds() {
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new ConfigError("Falta SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.");
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new ConfigError("Falta SUPABASE_URL y SUPABASE_SECRET_KEY (o SERVICE_ROLE).");
   return { url: url.replace(/\/$/, ""), key };
 }
 

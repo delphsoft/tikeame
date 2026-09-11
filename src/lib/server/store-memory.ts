@@ -4,6 +4,7 @@ import { hosted } from "./env";
 import { hashPassword } from "./password";
 import type {
   EventRecord,
+  MpTokens,
   OrderRow,
   OrganizerProfile,
   Role,
@@ -20,6 +21,7 @@ type Db = {
   scans: ScanRow[];
   events: EventRecord[];
   profiles: Record<string, OrganizerProfile>;
+  mpTokens: Record<string, MpTokens>;
 };
 
 function emptyDb(): Db {
@@ -48,7 +50,7 @@ function emptyDb(): Db {
           passwordHash: hashPassword("tikeame"),
         },
       ];
-  return { users, orders: [], tickets: [], scans: [], events: [], profiles: {} };
+  return { users, orders: [], tickets: [], scans: [], events: [], profiles: {}, mpTokens: {} };
 }
 
 const g = globalThis as typeof globalThis & { __tikeameDb?: Db };
@@ -116,7 +118,19 @@ export const memoryStore: StoreDriver = {
     return user;
   },
   async getOrganizerProfile(userId) {
-    return load().profiles[userId] ?? null;
+    const dbx = load();
+    const profile = dbx.profiles[userId];
+    if (!profile) return null;
+    const tokens = dbx.mpTokens[userId];
+    return { ...profile, mpConnected: Boolean(tokens?.accessToken), mpUserId: tokens?.userId ?? null };
+  },
+  async saveMpTokens(userId, tokens) {
+    const dbx = load();
+    dbx.mpTokens[userId] = tokens;
+    save(dbx);
+  },
+  async getMpTokens(userId) {
+    return load().mpTokens[userId] ?? null;
   },
   async putEvent(event) {
     const dbx = load();
@@ -165,7 +179,7 @@ export const memoryStore: StoreDriver = {
     return load().orders.filter((o) => o.email.toLowerCase() === email.toLowerCase() && o.status === "paid");
   },
   async listOrders() {
-    return load().orders;
+    return load().orders.filter((o) => o.status === "paid" || o.status === "pending" || o.status === "failed");
   },
   async putTickets(tickets) {
     const dbx = load();

@@ -8,6 +8,15 @@ export type OrganizerProfile = {
   condicionIva: string | null;
   domicilioFiscal: string | null;
   feePlan: FeePlan;
+  mpConnected?: boolean;
+  mpUserId?: string | null;
+};
+
+export type MpTokens = {
+  accessToken: string;
+  refreshToken: string;
+  userId: string;
+  expiresAt: string;
 };
 
 export type User = {
@@ -113,6 +122,8 @@ export type StoreDriver = {
   }): Promise<User>;
   listUsers(): Promise<User[]>;
   getOrganizerProfile(userId: string): Promise<OrganizerProfile | null>;
+  saveMpTokens(userId: string, tokens: MpTokens): Promise<void>;
+  getMpTokens(userId: string): Promise<MpTokens | null>;
   putEvent(event: EventRecord): Promise<void>;
   getEvent(slug: string): Promise<EventRecord | null>;
   listEvents(filter?: { organizerId?: string; status?: EventStatus }): Promise<EventRecord[]>;

@@ -37,6 +37,9 @@ En Vercel / `.env.local`:
 ```
 MP_ACCESS_TOKEN=APP_USR-…   # o TEST-… para sandbox
 MP_PUBLIC_KEY=APP_USR-…     # public key Checkout Pro
+MP_CLIENT_ID=               # App ID (número). Si falta, se infiere del access token
+MP_CLIENT_SECRET=           # Client Secret de la app MP — OAuth marketplace
+# Redirect URI en la app MP: https://tickeame.com.ar/api/mp/oauth/callback
 MP_PUBLIC_URL=https://tickeame.com.ar
 MP_WEBHOOK_URL=https://tickeame.com.ar/api/mp/webhook
 MP_WEBHOOK_SECRET=          # firma x-signature

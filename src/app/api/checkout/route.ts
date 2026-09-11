@@ -8,6 +8,7 @@ import { createPreference, mpEnabled } from "@/lib/server/mp";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import {
   getOrganizerProfile,
+  getSellerAccessToken,
   newOrderId,
   newViewToken,
   organizerMonthlyGmv,
@@ -113,6 +114,13 @@ export async function POST(req: Request) {
 
   if (mpEnabled()) {
     try {
+      const sellerAccessToken = organizerId ? await getSellerAccessToken(organizerId) : null;
+      if (organizerId && !sellerAccessToken) {
+        return NextResponse.json(
+          { error: "El organizador todavía no conectó su Mercado Pago. No se puede cobrar el split." },
+          { status: 503 },
+        );
+      }
       const pref = await createPreference({
         orderId: order.id,
         title: `${event.title} — entradas`,
@@ -120,6 +128,7 @@ export async function POST(req: Request) {
         fee: quote.platformFee,
         email,
         paymentMethod: method,
+        sellerAccessToken,
       });
       if (pref) {
         order.mpPreferenceId = pref.id;

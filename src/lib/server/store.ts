@@ -1,9 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { requirePersistentStore, supabaseConfigured } from "./env";
 import { verifyPassword } from "./password";
+import { mpOAuthRefresh } from "./mp";
 import { memoryStore } from "./store-memory";
 import { supabaseStore } from "./store-supabase";
-import type { EventRecord, EventStatus, OrderRow, OrganizerProfile, Role, ScanRow, StoreDriver, TicketRow } from "./types";
+import type { EventRecord, EventStatus, MpTokens, OrderRow, OrganizerProfile, Role, ScanRow, StoreDriver, TicketRow } from "./types";
 
 export type { EventRecord, EventStatus, OrderItem, OrderRow, OrganizerProfile, Role, ScanRow, TicketRow, User } from "./types";
 
@@ -51,6 +52,30 @@ export async function createUser(input: {
 
 export async function getOrganizerProfile(userId: string) {
   return driver().getOrganizerProfile(userId);
+}
+
+export async function saveMpTokens(userId: string, tokens: MpTokens) {
+  return driver().saveMpTokens(userId, tokens);
+}
+
+export async function getMpTokens(userId: string) {
+  return driver().getMpTokens(userId);
+}
+
+export async function getSellerAccessToken(userId: string): Promise<string | null> {
+  const tokens = await driver().getMpTokens(userId);
+  if (!tokens?.accessToken) return null;
+  const exp = Date.parse(tokens.expiresAt);
+  const soon = Date.now() + 24 * 60 * 60 * 1000;
+  if (!Number.isFinite(exp) || exp > soon) return tokens.accessToken;
+  if (!tokens.refreshToken) return tokens.accessToken;
+  try {
+    const next = await mpOAuthRefresh(tokens.refreshToken);
+    await driver().saveMpTokens(userId, next);
+    return next.accessToken;
+  } catch {
+    return tokens.accessToken;
+  }
 }
 
 export async function putEvent(event: EventRecord) {

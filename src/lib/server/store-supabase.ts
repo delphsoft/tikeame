@@ -1,4 +1,5 @@
 import { ConfigError } from "./env";
+import { applyReservation } from "./inventory";
 import { hashPassword } from "./password";
 import type {
   EventRecord,
@@ -81,7 +82,10 @@ function toUser(row: UserRow, profile?: OrganizerProfile | null): User {
 }
 
 function missingTable(err: unknown) {
-  return err instanceof ConfigError && /PGRST205|schema cache|Could not find the table/i.test(err.message);
+  return (
+    err instanceof ConfigError &&
+    /PGRST205|PGRST202|schema cache|Could not find the (table|function)/i.test(err.message)
+  );
 }
 
 type ProfileDb = {
@@ -406,15 +410,16 @@ export const supabaseStore: StoreDriver = {
   },
   async markTicketUsed(id) {
     const ticket = await supabaseStore.getTicket(id);
-    if (!ticket) return null;
+    if (!ticket || ticket.status !== "valid") return null;
     ticket.status = "used";
     ticket.usedAt = new Date().toISOString();
-    await sb(`tikeame_tickets?id=eq.${encodeURIComponent(id)}`, {
+    // Filtro status=eq.valid: si dos puertas escanean a la vez, solo una gana.
+    const rows = await sb<TicketDb[]>(`tikeame_tickets?id=eq.${encodeURIComponent(id)}&status=eq.valid`, {
       method: "PATCH",
-      headers: { Prefer: "return=minimal" },
+      headers: { Prefer: "return=representation" },
       body: JSON.stringify({ status: "used", used_at: ticket.usedAt, payload: ticket }),
     });
-    return ticket;
+    return rows?.length ? ticket : null;
   },
   async addScan(scan) {
     await sb("tikeame_scans", {
@@ -423,9 +428,54 @@ export const supabaseStore: StoreDriver = {
       body: JSON.stringify({ id: scan.id, ticket_id: scan.ticketId, payload: scan }),
     });
   },
-  async listScans() {
-    const rows = await sb<ScanDb[]>("tikeame_scans?select=payload&order=created_at.desc&limit=200");
+  async listScans(filter) {
+    const org = filter?.organizerId ? `&payload->>organizerId=eq.${encodeURIComponent(filter.organizerId)}` : "";
+    const rows = await sb<ScanDb[]>(`tikeame_scans?select=payload&order=created_at.desc&limit=200${org}`);
     return (rows ?? []).map((r) => r.payload);
+  },
+  async reserveTickets(slug, items, delta) {
+    try {
+      const res = await sb<{ ok: boolean; error?: string }>("rpc/tikeame_reserve", {
+        method: "POST",
+        body: JSON.stringify({ p_slug: slug, p_items: items, p_delta: delta }),
+      });
+      return res?.ok ? { ok: true } : { ok: false, error: res?.error || "Sin cupo" };
+    } catch (err) {
+      if (!missingTable(err)) throw err;
+    }
+    // Fallback sin la función SQL (no atómico entre instancias): corré schema-v2.sql en producción.
+    console.warn("[tickeame] tikeame_reserve no existe: reserva no atómica. Corré supabase/schema-v2.sql");
+    const event = await supabaseStore.getEvent(slug);
+    if (!event) return { ok: false, error: "Evento no encontrado" };
+    const res = applyReservation(event, items, delta);
+    if (res.ok) await supabaseStore.putEvent(event);
+    return res;
+  },
+  async findProfileByCuit(cuit) {
+    try {
+      const rows = await sb<{ user_id: string }[]>(
+        `tikeame_organizer_profiles?cuit=eq.${encodeURIComponent(cuit)}&select=user_id&limit=1`,
+      );
+      return rows?.[0]?.user_id ?? null;
+    } catch (err) {
+      if (!missingTable(err)) throw err;
+    }
+    const rows = await sb<OrderDb[]>(
+      `tikeame_orders?status=eq.org_profile&payload->>cuit=eq.${encodeURIComponent(cuit)}&select=id&limit=1`,
+    );
+    return rows?.[0]?.id ? rows[0].id.replace(/^PRF-/, "") : null;
+  },
+  async ticketsForEvent(slug) {
+    const rows = await sb<TicketDb[]>(
+      `tikeame_tickets?payload->>eventSlug=eq.${encodeURIComponent(slug)}&select=*&limit=20000`,
+    );
+    return (rows ?? []).map((r) => r.payload);
+  },
+  async pendingOrdersBefore(iso) {
+    const rows = await sb<OrderDb[]>(
+      `tikeame_orders?status=eq.pending&payload->>expiresAt=lt.${encodeURIComponent(iso)}&select=*&limit=200`,
+    );
+    return (rows ?? []).map(toOrder);
   },
   async paidCount() {
     const rows = await sb<{ id: string }[]>("tikeame_tickets?status=eq.used&select=id");

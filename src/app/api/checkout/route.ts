@@ -6,6 +6,7 @@ import { ConfigError, demoPayAllowed, hosted, supabaseConfigured } from "@/lib/s
 import { fulfillOrder } from "@/lib/server/fulfill";
 import { createPreference, mpEnabled } from "@/lib/server/mp";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
+import { expireStalePending, releaseOrder, RESERVATION_MINUTES } from "@/lib/server/settle";
 import {
   getOrganizerProfile,
   getSellerAccessToken,
@@ -13,6 +14,7 @@ import {
   newViewToken,
   organizerMonthlyGmv,
   putOrder,
+  reserveTickets,
   type OrderItem,
   type OrderRow,
 } from "@/lib/server/store";
@@ -47,6 +49,13 @@ export async function POST(req: Request) {
 
   const event = await resolveCatalogEvent(body.eventSlug || "neon");
   if (!event) return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
+  const live = Boolean(event.organizerId);
+  if (live && event.status !== "on_sale") {
+    return NextResponse.json(
+      { error: event.status === "sold_out" ? "Entradas agotadas" : "El evento no está a la venta" },
+      { status: 409 },
+    );
+  }
 
   const qty = body.qty ?? {};
   const items: OrderItem[] = event.tickets
@@ -71,6 +80,9 @@ export async function POST(req: Request) {
     method,
     plan: profile?.feePlan ?? "percent",
     monthlyGmv,
+    platformPctOverride: event.platformPct ?? null,
+    feePayer: event.feePayer,
+    transferDiscountPct: event.transferDiscountPct,
   });
   const fee = quote.fee;
   const total = quote.total;
@@ -91,11 +103,15 @@ export async function POST(req: Request) {
     dni: (body.dni || "").trim().slice(0, 20),
     iva: body.iva || "Consumidor Final",
     items,
-    subtotal,
+    // Lo que efectivamente se cobra por las entradas (después del descuento por transferencia).
+    subtotal: quote.subtotal,
     fee,
     processorFee: quote.processorFee,
     platformFee: quote.platformFee,
     paymentMethod: method,
+    feePayer: quote.feePayer,
+    listSubtotal: quote.listPrice,
+    discount: quote.discount,
     organizerId,
     total,
     status: "pending",
@@ -103,24 +119,42 @@ export async function POST(req: Request) {
     mpPaymentId: null,
     viewToken: newViewToken(),
     createdAt: new Date().toISOString(),
+    reserved: false,
+    expiresAt: new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000).toISOString(),
   };
+
+  const sellerAccessToken = mpEnabled() && organizerId ? await getSellerAccessToken(organizerId) : null;
+  if (mpEnabled() && organizerId && !sellerAccessToken) {
+    return NextResponse.json(
+      { error: "El organizador todavía no conectó su Mercado Pago. No se puede cobrar el split." },
+      { status: 503 },
+    );
+  }
+
+  // Cupo: primero liberamos reservas vencidas, después tomamos el cupo de esta orden.
+  if (live) {
+    await expireStalePending();
+    const reserved = await reserveTickets(
+      event.slug,
+      items.map((i) => ({ key: i.key, qty: i.qty })),
+      1,
+    );
+    if (!reserved.ok) {
+      return NextResponse.json({ error: reserved.error }, { status: 409 });
+    }
+    order.reserved = true;
+  }
 
   try {
     await putOrder(order);
   } catch (err) {
+    if (order.reserved) await releaseOrder(order, "mp_error").catch(() => null);
     const message = err instanceof ConfigError ? err.message : "No se pudo guardar la orden";
     return NextResponse.json({ error: message }, { status: 503 });
   }
 
   if (mpEnabled()) {
     try {
-      const sellerAccessToken = organizerId ? await getSellerAccessToken(organizerId) : null;
-      if (organizerId && !sellerAccessToken) {
-        return NextResponse.json(
-          { error: "El organizador todavía no conectó su Mercado Pago. No se puede cobrar el split." },
-          { status: 503 },
-        );
-      }
       const pref = await createPreference({
         orderId: order.id,
         title: `${event.title} — entradas`,
@@ -129,6 +163,8 @@ export async function POST(req: Request) {
         email,
         paymentMethod: method,
         sellerAccessToken,
+        // La preference vence 5 min antes que la reserva.
+        expiresAt: new Date(Date.parse(order.expiresAt!) - 5 * 60 * 1000).toISOString(),
       });
       if (pref) {
         order.mpPreferenceId = pref.id;
@@ -141,6 +177,7 @@ export async function POST(req: Request) {
         });
       }
     } catch (err) {
+      await releaseOrder(order, "mp_error").catch(() => null);
       return NextResponse.json(
         { error: err instanceof Error ? err.message : "No se pudo crear el pago" },
         { status: 502 },
@@ -149,6 +186,7 @@ export async function POST(req: Request) {
   }
 
   if (!demoPayAllowed()) {
+    await releaseOrder(order, "mp_error").catch(() => null);
     return NextResponse.json({ error: "Mercado Pago no está configurado." }, { status: 503 });
   }
 
@@ -160,5 +198,6 @@ export async function POST(req: Request) {
     viewToken: order.viewToken,
     checkoutUrl: `/confirmacion?order=${encodeURIComponent(order.id)}&t=${encodeURIComponent(order.viewToken)}`,
     mode: "demo",
+    quote,
   });
 }

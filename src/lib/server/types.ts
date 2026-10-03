@@ -1,4 +1,4 @@
-import type { FeePlan, PaymentMethod } from "@/lib/pricing";
+import type { FeePayer, FeePlan, PaymentMethod } from "@/lib/pricing";
 
 export type Role = "buyer" | "organizer" | "admin";
 
@@ -62,7 +62,17 @@ export type EventRecord = {
   lat: number;
   lng: number;
   tickets: EventTicket[];
+  /** Tramo del cargo de servicio (15/12/9) congelado al publicar (plan percent). */
+  platformPct?: number;
+  tierLabel?: string;
+  /** Quién paga MP + Tickeame. Se puede cambiar solo mientras no haya ventas. */
+  feePayer?: FeePayer;
+  /** Descuento al comprador si paga por transferencia (0–10%). Fijo tras la primera venta. */
+  transferDiscountPct?: number;
 };
+
+export type ReserveItem = { key: string; qty: number };
+export type ReserveResult = { ok: true } | { ok: false; error: string };
 
 export type OrderItem = { key: string; name: string; qty: number; unitPrice: number };
 
@@ -92,6 +102,10 @@ export type OrderRow = {
   processorFee?: number;
   platformFee?: number;
   paymentMethod?: PaymentMethod;
+  feePayer?: FeePayer;
+  /** Precio de lista antes del descuento por transferencia. */
+  listSubtotal?: number;
+  discount?: number;
   organizerId?: string | null;
   total: number;
   status: "pending" | "paid" | "failed";
@@ -99,6 +113,13 @@ export type OrderRow = {
   mpPaymentId: string | null;
   viewToken: string;
   createdAt: string;
+  /** true mientras la orden tiene cupo tomado (pending o paid). */
+  reserved?: boolean;
+  /** Vencimiento de la reserva si sigue pending. */
+  expiresAt?: string;
+  failReason?: "rejected" | "expired" | "mp_error" | "no_stock_on_late_payment";
+  /** Pago aprobado que no pudo emitirse (ej. llegó tarde y no había cupo): requiere devolución. */
+  refundRequired?: boolean;
 };
 
 export type ScanRow = {
@@ -106,8 +127,10 @@ export type ScanRow = {
   ticketId: string;
   name: string;
   type: string;
-  status: "valid" | "used" | "invalid";
+  status: "valid" | "used" | "invalid" | "wrong_event";
   time: string;
+  eventSlug?: string | null;
+  organizerId?: string | null;
 };
 
 export type StoreDriver = {
@@ -138,7 +161,12 @@ export type StoreDriver = {
   listTickets(): Promise<TicketRow[]>;
   markTicketUsed(id: string): Promise<TicketRow | null>;
   addScan(scan: ScanRow): Promise<void>;
-  listScans(): Promise<ScanRow[]>;
+  listScans(filter?: { organizerId?: string }): Promise<ScanRow[]>;
+  /** Toma (delta=1) o devuelve (delta=-1) cupo de forma atómica. Pasa a sold_out / on_sale solo. */
+  reserveTickets(slug: string, items: ReserveItem[], delta: 1 | -1): Promise<ReserveResult>;
+  findProfileByCuit(cuit: string): Promise<string | null>;
+  ticketsForEvent(slug: string): Promise<TicketRow[]>;
+  pendingOrdersBefore(iso: string): Promise<OrderRow[]>;
   paidCount(): Promise<number>;
   soldCount(): Promise<number>;
 };

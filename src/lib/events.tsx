@@ -48,6 +48,11 @@ export type ManagedEvent = {
   lat: number;
   lng: number;
   tickets: EventTicket[];
+  /** Tramo del cargo de servicio congelado al publicar (lo setea el server). */
+  platformPct?: number;
+  tierLabel?: string;
+  feePayer?: "organizer" | "buyer";
+  transferDiscountPct?: number;
 };
 
 export type Organizer = {

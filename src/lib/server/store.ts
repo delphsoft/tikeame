@@ -4,7 +4,7 @@ import { verifyPassword } from "./password";
 import { mpOAuthRefresh } from "./mp";
 import { memoryStore } from "./store-memory";
 import { supabaseStore } from "./store-supabase";
-import type { EventRecord, EventStatus, MpTokens, OrderRow, OrganizerProfile, Role, ScanRow, StoreDriver, TicketRow } from "./types";
+import type { EventRecord, EventStatus, MpTokens, OrderRow, OrganizerProfile, ReserveItem, Role, ScanRow, StoreDriver, TicketRow } from "./types";
 
 export type { EventRecord, EventStatus, OrderItem, OrderRow, OrganizerProfile, Role, ScanRow, TicketRow, User } from "./types";
 
@@ -148,8 +148,24 @@ export async function addScan(scan: ScanRow) {
   return driver().addScan(scan);
 }
 
-export async function listScans() {
-  return driver().listScans();
+export async function listScans(filter?: { organizerId?: string }) {
+  return driver().listScans(filter);
+}
+
+export async function reserveTickets(slug: string, items: ReserveItem[], delta: 1 | -1) {
+  return driver().reserveTickets(slug, items, delta);
+}
+
+export async function findProfileByCuit(cuit: string) {
+  return driver().findProfileByCuit(cuit);
+}
+
+export async function ticketsForEvent(slug: string) {
+  return driver().ticketsForEvent(slug);
+}
+
+export async function pendingOrdersBefore(iso: string) {
+  return driver().pendingOrdersBefore(iso);
 }
 
 export async function paidCount() {

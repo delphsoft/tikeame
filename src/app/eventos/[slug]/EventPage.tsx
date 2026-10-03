@@ -45,7 +45,11 @@ export function EventPage({ slug }: { slug: string }) {
 
   const tickets = event?.tickets ?? [];
   const subtotal = tickets.reduce((s, t) => s + qty[t.key] * t.price, 0);
-  const quote = quoteFees(subtotal, { method: "card" });
+  const quote = quoteFees(subtotal, {
+    method: "card",
+    platformPctOverride: event?.platformPct ?? null,
+    feePayer: event?.feePayer,
+  });
   const fee = quote.fee;
   const total = quote.total;
   const itemCount = tickets.reduce((s, t) => s + qty[t.key], 0);
@@ -295,19 +299,17 @@ export function EventPage({ slug }: { slug: string }) {
               <span>{fmtARS(subtotal)}</span>
             </div>
             <div className="mt-1.5 flex justify-between text-[13px] font-semibold text-muted2">
-              <span>Cargo de servicio ({formatPct(quote.totalPct)})</span>
-              <span>{fmtARS(fee)}</span>
-            </div>
-            <div className="mt-1 text-[11px] text-muted2">
-              Incluye procesamiento MP {formatPct(quote.processorPct)} + Tickeame {formatPct(quote.platformPct)}.
-              Transferencia sale más barato en el checkout.
+              <span>Cargo de servicio{fee > 0 ? ` (${formatPct(quote.totalPct)})` : ""}</span>
+              <span>{fee > 0 ? fmtARS(fee) : "$0"}</span>
             </div>
             <div className="mt-3.5 flex justify-between text-[19px] font-extrabold text-cream">
               <span>Total</span>
               <span>{fmtARS(total)}</span>
             </div>
             <div className="mt-3.5 rounded-md bg-teal/16 px-3 py-2.5 text-xs font-bold text-teal">
-              El organizador recibe {fmtARS(subtotal)} — el 100% del precio de la entrada.
+              {fee > 0
+                ? "Con transferencia el cargo es menor. El organizador recibe el 100% del precio."
+                : "Pagás el precio de la entrada. Sin cargos de servicio."}
             </div>
             <button
               type="button"

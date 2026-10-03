@@ -145,6 +145,7 @@ export async function createPreference(input: {
   email: string;
   paymentMethod?: "card" | "transfer";
   sellerAccessToken?: string | null;
+  expiresAt?: string;
 }) {
   const token = input.sellerAccessToken || process.env.MP_ACCESS_TOKEN;
   if (!token) return null;
@@ -167,12 +168,27 @@ export async function createPreference(input: {
       pending: `${mpPublicUrl()}/api/mp/return?status=pending`,
     },
     auto_return: "approved",
-    notification_url: process.env.MP_WEBHOOK_URL || `${mpPublicUrl()}/api/mp/webhook`,
+    // ?order= permite al webhook saber de qué organizador es el pago y consultarlo con su token.
+    notification_url: `${process.env.MP_WEBHOOK_URL || `${mpPublicUrl()}/api/mp/webhook`}?order=${encodeURIComponent(input.orderId)}`,
     metadata: { orderId: input.orderId },
   };
 
+  if (input.expiresAt) {
+    // La preference vence antes que nuestra reserva de cupo: no puede entrar un pago sobre cupo liberado.
+    body.expires = true;
+    body.expiration_date_from = new Date().toISOString();
+    body.expiration_date_to = input.expiresAt;
+  }
+
   if (input.paymentMethod === "transfer") {
-    body.excluded_payment_types = [{ id: "credit_card" }, { id: "debit_card" }, { id: "prepaid_card" }];
+    // Sin efectivo (Rapipago/Pago Fácil): quedarían pending días con el cupo tomado.
+    body.excluded_payment_types = [
+      { id: "credit_card" },
+      { id: "debit_card" },
+      { id: "prepaid_card" },
+      { id: "ticket" },
+      { id: "atm" },
+    ];
   }
   if (input.paymentMethod === "card") {
     body.excluded_payment_types = [{ id: "ticket" }, { id: "atm" }, { id: "bank_transfer" }];
@@ -201,8 +217,12 @@ export async function createPreference(input: {
   };
 }
 
-export async function getPayment(id: string) {
-  const token = process.env.MP_ACCESS_TOKEN;
+/**
+ * Los pagos del split se crean con el token del vendedor (organizador):
+ * hay que consultarlos con ese mismo token. Si no hay, cae al de la plataforma.
+ */
+export async function getPayment(id: string, sellerAccessToken?: string | null) {
+  const token = sellerAccessToken || process.env.MP_ACCESS_TOKEN;
   if (!token) return null;
   const res = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -212,5 +232,6 @@ export async function getPayment(id: string) {
     id: number;
     status: string;
     external_reference?: string;
+    transaction_amount?: number;
   };
 }

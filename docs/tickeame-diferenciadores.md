@@ -49,12 +49,9 @@ rápido que ajustar un porcentaje.
 
 ## Modelo de comisión (referencia técnica)
 
-- Escalonado por GMV mensual del organizador (mes calendario):
-  - `<$2M/mes` → 15%
-  - `$2M-10M/mes` → 12%
-  - `>$10M/mes` → 9%
-- Descuento de 8 puntos si el comprador paga por transferencia en vez de tarjeta (piso 4%).
-- Implementado en `src/lib/server/pricing.ts` (repo `delphsoft/tickeame`).
+- Tickeame 5% / 3,5% / 2% según GMV mensual del organizador; MP aparte.
+- El organizador elige por evento si el costo lo paga él o el comprador (`feePayer`).
+- Implementado en `src/lib/pricing.ts` (`VOLUME_TIERS`, `PROCESSOR_PCT`).
 
 ## Payment rails evaluados
 

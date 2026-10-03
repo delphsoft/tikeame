@@ -13,7 +13,9 @@ export async function requireUser(roles?: Role[]) {
 }
 
 export function canSeeOrder(order: OrderRow, user: User | null, viewToken?: string | null) {
-  if (user?.role === "admin" || user?.role === "organizer") return true;
+  if (user?.role === "admin") return true;
+  // Un organizador solo ve órdenes de sus propios eventos.
+  if (user?.role === "organizer" && order.organizerId && order.organizerId === user.id) return true;
   if (user && user.email.toLowerCase() === order.email.toLowerCase()) return true;
   if (viewToken && tokensMatch(viewToken, order.viewToken)) return true;
   return false;

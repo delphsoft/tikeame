@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { validCuit } from "@/lib/cuit";
 import type { FeePlan } from "@/lib/pricing";
 import { createUser, setSession } from "@/lib/server/auth";
+import { findProfileByCuit } from "@/lib/server/store";
 import { ConfigError } from "@/lib/server/env";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { getSessionSecret } from "@/lib/server/session-token";
@@ -46,8 +47,15 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+    const cuitDigits = cuit.replace(/\D/g, "");
+    if (await findProfileByCuit(cuitDigits).catch(() => null)) {
+      return NextResponse.json(
+        { error: "Ese CUIT ya tiene una cuenta de organizador. Entrá con esa cuenta o escribinos." },
+        { status: 409 },
+      );
+    }
     profile = {
-      cuit: cuit.replace(/\D/g, ""),
+      cuit: cuitDigits,
       razonSocial: body.razonSocial.trim(),
       condicionIva: body.condicionIva,
       domicilioFiscal: body.domicilioFiscal.trim(),

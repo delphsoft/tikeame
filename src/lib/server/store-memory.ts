@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { hosted } from "./env";
+import { applyReservation } from "./inventory";
 import { hashPassword } from "./password";
 import type {
   EventRecord,
@@ -200,7 +201,7 @@ export const memoryStore: StoreDriver = {
   async markTicketUsed(id) {
     const dbx = load();
     const t = dbx.tickets.find((x) => x.id === id);
-    if (!t) return null;
+    if (!t || t.status !== "valid") return null;
     t.status = "used";
     t.usedAt = new Date().toISOString();
     save(dbx);
@@ -209,11 +210,32 @@ export const memoryStore: StoreDriver = {
   async addScan(scan) {
     const dbx = load();
     dbx.scans.unshift(scan);
-    dbx.scans = dbx.scans.slice(0, 40);
+    dbx.scans = dbx.scans.slice(0, 2000);
     save(dbx);
   },
-  async listScans() {
-    return load().scans;
+  async listScans(filter) {
+    const scans = load().scans;
+    const out = filter?.organizerId ? scans.filter((s) => s.organizerId === filter.organizerId) : scans;
+    return out.slice(0, 200);
+  },
+  async reserveTickets(slug, items, delta) {
+    // Sin awaits entre lectura y escritura: atómico dentro del proceso de Node.
+    const dbx = load();
+    const event = dbx.events.find((e) => e.slug === slug);
+    if (!event) return { ok: false, error: "Evento no encontrado" };
+    const res = applyReservation(event, items, delta);
+    if (res.ok) save(dbx);
+    return res;
+  },
+  async findProfileByCuit(cuit) {
+    const hit = Object.entries(load().profiles).find(([, p]) => p.cuit === cuit);
+    return hit ? hit[0] : null;
+  },
+  async ticketsForEvent(slug) {
+    return load().tickets.filter((t) => t.eventSlug === slug);
+  },
+  async pendingOrdersBefore(iso) {
+    return load().orders.filter((o) => o.status === "pending" && (o.expiresAt ?? o.createdAt) < iso);
   },
   async paidCount() {
     return load().tickets.filter((t) => t.status === "used").length;

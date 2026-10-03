@@ -11,7 +11,7 @@ type Scan = {
   ticketId: string;
   name: string;
   type: string;
-  status: "valid" | "used" | "invalid";
+  status: "valid" | "used" | "invalid" | "wrong_event";
   time: string;
 };
 

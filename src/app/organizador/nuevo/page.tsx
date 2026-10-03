@@ -28,7 +28,9 @@ export default function NuevoEventoPage() {
   const router = useRouter();
   const { user } = useSession();
   const { events, addEvent } = useEvents();
-  const [planLabel, setPlanLabel] = useState("15% · primer tramo");
+  const [planLabel, setPlanLabel] = useState("5% · primer tramo");
+  const [feePayer, setFeePayer] = useState<"organizer" | "buyer">("organizer");
+  const [transferDiscountPct, setTransferDiscountPct] = useState(0);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [category, setCategory] = useState("Electrónica");
@@ -101,6 +103,8 @@ export default function NuevoEventoPage() {
       hero,
       commissionPct: 0,
       status,
+      feePayer,
+      transferDiscountPct,
       organizerId: user?.id || "tiko",
       organizerName: user?.name || "Tiko Producciones",
       featured: false,
@@ -288,9 +292,49 @@ export default function NuevoEventoPage() {
             </div>
             <div className="font-display text-2xl text-coral">{planLabel.split(" · ")[0]}</div>
           </div>
-          <p className="mt-2 text-xs text-muted">
-            {planLabel}. El comprador ve un solo cargo (procesamiento MP + Tickeame). Vos recibís el
-            100% del precio de la entrada. Link: tickeame.com.ar/eventos/{slugPreview}
+          <div className="mt-4 text-xs font-extrabold uppercase tracking-[0.1em] text-ink">
+            ¿Quién paga Mercado Pago + Tickeame?
+          </div>
+          <div className="mt-2 grid gap-2 md:grid-cols-2">
+            {(
+              [
+                ["organizer", "Yo (organizador)", "El público paga el precio publicado. Se descuenta de tu cobro."],
+                ["buyer", "El comprador", "Se suma un cargo de servicio. Vos recibís el 100% del precio."],
+              ] as const
+            ).map(([value, label, help]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFeePayer(value)}
+                className={`rounded border-2 p-3 text-left ${feePayer === value ? "border-coral bg-coral/10" : "border-border bg-white"}`}
+              >
+                <div className="text-sm font-extrabold">{label}</div>
+                <div className="mt-1 text-xs text-muted">{help}</div>
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 text-xs font-extrabold uppercase tracking-[0.1em] text-ink">
+            Descuento si pagan por transferencia
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {[0, 3, 5].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setTransferDiscountPct(d)}
+                className={`rounded border-2 px-3 py-2 text-sm font-extrabold ${transferDiscountPct === d ? "border-coral bg-coral/10" : "border-border bg-white"}`}
+              >
+                {d === 0 ? "Sin descuento" : `${d}%`}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            Con transferencia MP cobra ~2% en vez de ~8,5%: aun dando 5% de descuento, cobrás más
+            que con una venta con tarjeta.
+          </p>
+          <p className="mt-3 text-xs text-muted">
+            {planLabel} (IVA incluido). Mercado Pago aparte (~8,5% tarjeta / ~2% transferencia). Una vez que hay
+            ventas, no se puede cambiar quién paga. Link: tickeame.com.ar/eventos/{slugPreview}
           </p>
         </section>
 

@@ -1,4 +1,5 @@
-export const COMMISSION_PCT = 3;
+/** El comprador no paga cargo de servicio. */
+export const COMMISSION_PCT = 0;
 
 export type TicketKey = "early" | "general" | "vip" | "parking";
 
@@ -217,8 +218,9 @@ export function tierBadge(tier: Promoter["tier"]) {
   }
 }
 
-export function scanStatusStyle(status: "valid" | "used" | "invalid") {
+export function scanStatusStyle(status: "valid" | "used" | "invalid" | "wrong_event") {
   if (status === "valid") return { bg: "#E9F8F2", fg: "#2FA98A", label: "Válido" };
   if (status === "used") return { bg: "#FFF1EE", fg: "#E85445", label: "Ya ingresó" };
+  if (status === "wrong_event") return { bg: "#FFF1EE", fg: "#E85445", label: "Otro evento" };
   return { bg: "#EFEBF7", fg: "#6B5D8A", label: "No reconocido" };
 }

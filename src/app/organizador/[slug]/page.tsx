@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPct, quoteFees } from "@/lib/pricing";
+
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { OrganizerHeader } from "@/components/OrganizerHeader";
@@ -29,8 +31,15 @@ export default function EventDashPage() {
   const sold = eventSold(event);
   const cap = eventCapacity(event);
   const gross = eventGross(event);
-  const fee = gross * (event.commissionPct / 100);
-  const net = gross - fee;
+  // El costo lo paga el organizador: MP (estimado con tarjeta) + Tickeame.
+  const q = quoteFees(gross, {
+    method: "card",
+    platformPctOverride: event.platformPct ?? null,
+    feePayer: event.feePayer,
+  });
+  const fee = q.platformFee;
+  const mpFee = q.processorFee;
+  const net = q.organizerNet;
   const isNeon = event.slug === "neon";
   const sales = isNeon ? ORGANIZER_SALES : [];
 
@@ -61,7 +70,7 @@ export default function EventDashPage() {
               {event.title} — {event.subtitle}
             </h1>
             <div className="mt-1 text-[13px] text-muted">
-              {event.dateLabel} · {event.venue} · comisión {event.commissionPct}%
+              {event.dateLabel} · {event.venue} · comisión Tickeame {formatPct(q.platformPct)}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -80,7 +89,7 @@ export default function EventDashPage() {
         <div className="mt-7 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Entradas vendidas", value: String(sold), sub: `de ${cap}` },
-            { label: "Ingresos netos", value: fmtARS(net), sub: "100% para vos" },
+            { label: "Ingresos netos", value: fmtARS(net), sub: q.feePayer === "buyer" ? "100% para vos · el cargo lo paga el comprador" : `después de MP y Tickeame (${formatPct(q.organizerCostPct)})` },
             { label: "Entradas restantes", value: String(Math.max(0, cap - sold)), sub: `de ${cap} totales` },
             { label: "Ocupación", value: cap ? `${Math.round((sold / cap) * 100)}%` : "0%", sub: "sobre capacidad total" },
           ].map((s) => (
@@ -119,7 +128,9 @@ export default function EventDashPage() {
               <div className="text-[11px] font-extrabold uppercase text-teal">Ingresos netos</div>
               <div className="mt-1 font-display text-[22px]">{fmtARS(net)}</div>
               <div className="mt-0.5 text-xs text-muted">
-                Comisión Tickeame {fmtARS(fee)} · ya descontada
+                {q.feePayer === "buyer"
+                  ? `Cargo al comprador: MP ~${fmtARS(mpFee)} + Tickeame ${fmtARS(fee)}`
+                  : `Mercado Pago ~${fmtARS(mpFee)} + Tickeame ${fmtARS(fee)} · ya descontados (estimado con tarjeta)`}
               </div>
             </div>
           </div>

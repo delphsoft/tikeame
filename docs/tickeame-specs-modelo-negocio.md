@@ -22,36 +22,38 @@ pensado por un contador para productoras PyME argentinas.
 
 ### 2.1 Estructura de la transacción
 
-El comprador paga: **precio de la entrada + cargo de servicio**. El cargo de servicio tiene
-dos capas completamente separadas (inspirado en cómo lo resuelven qrTicket y Fanz):
+**Comisión Tickeame**, escalonada por GMV mensual del organizador (mes calendario), sobre el
+precio de la entrada. Se congela en el evento al publicarlo:
 
-**Capa 1 — Costo del procesador (pass-through, siempre se cobra)**
-Cubre lo que Mercado Pago descuenta realmente. Como MP se cobra del lado del organizador
-antes que cualquier otra comisión, esta capa repone ese costo para que el organizador reciba
-el 100% del precio de la entrada:
-
-| Medio de pago | % pass-through |
+| GMV del mes | Tickeame |
 |---|---|
-| Tarjeta | 8,5% |
-| Transferencia / dinero en cuenta (dentro de MP) | 2% |
+| < $2M | 5% |
+| $2M – $10M | 3,5% |
+| > $10M | 2% |
 
-**Capa 2 — Comisión propia de Tickeame (según plan elegido por el organizador)**
+Mercado Pago aparte (~8,5% tarjeta / ~2% transferencia, lo descuenta del lado del vendedor).
 
-- **Plan "% por venta"** (default): escalonado por GMV mensual (mes calendario) de la
-  productora —
-  - `<$2M/mes` → 15%
-  - `$2M-10M/mes` → 12%
-  - `>$10M/mes` → 9%
-- **Plan "mensual"**: fee fijo de referencia **$45.000 ARS/mes**, hasta **10 eventos**
-  incluidos. En este plan la Capa 2 es 0% — el organizador ya pagó por adelantado, el
-  comprador solo paga el pass-through del procesador. _Nota: el cobro recurrente de este
-  plan (vía Suscripciones de MP o equivalente) todavía no está construido — hoy solo existe
-  el modelo de datos y la selección de plan._
+**Quién paga (lo elige el organizador por evento, `feePayer`):**
+- `organizer` (default): el comprador paga el precio publicado; MP + Tickeame se descuentan
+  del cobro del organizador.
+- `buyer`: se suma un cargo de servicio al comprador, grosseado para que el organizador
+  reciba el 100% (`total = (precio + Tickeame) / (1 − MP%)`).
+Una vez que el evento tiene ventas, `feePayer` no se puede cambiar.
 
-Piso mínimo de cargo total: **4%** (protege márgen aunque el organizador esté en el tramo
-más bajo y elija transferencia).
+**Comisiones con IVA incluido** (`COMMISSION_IVA_INCLUDED`): el 5% es lo que paga el
+organizador; Tickeame factura 5% / 1,21 de neto + IVA.
 
-### 2.2 Por qué el organizador recibe el 100%
+**Descuento por transferencia** (`transferDiscountPct`, 0/3/5%, opcional por evento): el
+organizador puede bajarle el precio al comprador que paga con transferencia/dinero en cuenta.
+Como MP cobra ~2% en vez de ~8,5%, con hasta ~5% de descuento el organizador sigue cobrando
+más que con tarjeta. En el checkout, si la transferencia es más barata para el comprador,
+arranca preseleccionada y muestra el ahorro. Se congela con la primera venta.
+
+**Plan "mensual"**: $45.000 ARS/mes, hasta 10 eventos, Tickeame 0% por transacción (MP igual).
+
+Tickeame factura solo su comisión, al organizador.
+
+### 2.2 Split instantáneo
 
 El split se hace vía Mercado Pago Marketplace (OAuth): cada organizador conecta su propia
 cuenta de MP, y el cobro se reparte automáticamente al momento de la venta — el organizador

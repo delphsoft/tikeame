@@ -116,12 +116,24 @@ export async function resolveCatalogEvent(slug: string) {
         tickets: live.tickets.map((t) => ({ key: t.key, name: t.name, price: t.price })),
         organizerId: live.organizerId,
         organizerName: live.organizerName,
-      } satisfies CatalogEvent & { organizerId: string; organizerName: string };
+        status: live.status,
+        platformPct: live.platformPct ?? null,
+        feePayer: live.feePayer ?? ("organizer" as const),
+        transferDiscountPct: live.transferDiscountPct ?? 0,
+      };
     }
   } catch {
     /* demo fallback */
   }
   const demo = getCatalogEvent(slug);
   if (!demo) return null;
-  return { ...demo, organizerId: null as string | null, organizerName: "Tiko Producciones" };
+  return {
+    ...demo,
+    organizerId: null as string | null,
+    organizerName: "Tiko Producciones",
+    status: "on_sale" as string,
+    platformPct: null as number | null,
+    feePayer: "organizer" as "organizer" | "buyer",
+    transferDiscountPct: 0,
+  };
 }

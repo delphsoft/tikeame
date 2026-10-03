@@ -3,10 +3,11 @@
 import { track } from "@vercel/analytics";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Logo } from "@/components/Logo";
 import { useCart } from "@/lib/cart";
 import { TICKET_TIERS } from "@/lib/data";
+import { useEvents } from "@/lib/events";
 import { fmtARS } from "@/lib/money";
 import { formatPct, quoteFees, type PaymentMethod } from "@/lib/pricing";
 import { useSession } from "@/lib/session";
@@ -14,9 +15,25 @@ import { useSession } from "@/lib/session";
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useSession();
-  const { qty, eventSlug, itemCount, subtotal, setOrder } = useCart();
-  const [method, setMethod] = useState<PaymentMethod>("card");
-  const quote = quoteFees(subtotal, { method });
+  const { qty, eventSlug, setOrder } = useCart();
+  const { getEvent } = useEvents();
+  const event = getEvent(eventSlug);
+  // Precios del evento real (no los del demo): el server cobra estos.
+  const tiers = event?.tickets ?? TICKET_TIERS;
+  const subtotal = tiers.reduce((s, t) => s + (qty[t.key] ?? 0) * t.price, 0);
+  const itemCount = tiers.reduce((s, t) => s + (qty[t.key] ?? 0), 0);
+  const pricing = {
+    platformPctOverride: event?.platformPct ?? null,
+    feePayer: event?.feePayer,
+    transferDiscountPct: event?.transferDiscountPct ?? 0,
+  };
+  const cardQuote = quoteFees(subtotal, { ...pricing, method: "card" });
+  const transferQuote = quoteFees(subtotal, { ...pricing, method: "transfer" });
+  const transferSaves = Math.max(0, cardQuote.total - transferQuote.total);
+  // Si la transferencia le ahorra plata al comprador, arranca seleccionada.
+  const [picked, setMethod] = useState<PaymentMethod | null>(null);
+  const method: PaymentMethod = picked ?? (transferSaves > 0 ? "transfer" : "card");
+  const quote = method === "transfer" ? transferQuote : cardQuote;
   const fee = quote.fee;
   const total = quote.total;
   const [dni, setDni] = useState("");
@@ -26,14 +43,9 @@ export default function CheckoutPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const lines = useMemo(
-    () =>
-      TICKET_TIERS.filter((t) => qty[t.key] > 0).map((t) => ({
-        label: `${qty[t.key]}× ${t.name}`,
-        amount: qty[t.key] * t.price,
-      })),
-    [qty],
-  );
+  const lines = tiers
+    .filter((t) => qty[t.key] > 0)
+    .map((t) => ({ label: `${qty[t.key]}× ${t.name}`, amount: qty[t.key] * t.price }));
 
   async function pay() {
     if (itemCount === 0) return;
@@ -73,7 +85,7 @@ export default function CheckoutPage() {
       track("compra_confirmada", { eventSlug, total, mode: data.mode });
       setOrder({
         id: data.orderId,
-        items: TICKET_TIERS.filter((t) => qty[t.key] > 0).map((t) => ({
+        items: tiers.filter((t) => qty[t.key] > 0).map((t) => ({
           key: t.key,
           name: t.name,
           qty: qty[t.key],
@@ -123,17 +135,15 @@ export default function CheckoutPage() {
               <span>Subtotal</span>
               <span>{fmtARS(subtotal)}</span>
             </div>
+            {quote.discount > 0 && (
+              <div className="flex justify-between text-[13px] font-bold text-[#2FA98A]">
+                <span>Descuento transferencia</span>
+                <span>−{fmtARS(quote.discount)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-[13px] text-muted">
-              <span>Procesamiento MP ({formatPct(quote.processorPct)})</span>
-              <span>{fmtARS(quote.processorFee)}</span>
-            </div>
-            <div className="flex justify-between text-[13px] text-muted">
-              <span>Tickeame ({formatPct(quote.platformPct)})</span>
-              <span>{fmtARS(quote.platformFee)}</span>
-            </div>
-            <div className="flex justify-between text-[13px] text-muted">
-              <span>Cargo de servicio ({formatPct(quote.totalPct)})</span>
-              <span>{fmtARS(fee)}</span>
+              <span>Cargo de servicio{fee > 0 ? ` (${formatPct(quote.totalPct)})` : ""}</span>
+              <span>{fee > 0 ? fmtARS(fee) : "$0"}</span>
             </div>
             <div className="my-0.5 h-px bg-border" />
             <div className="flex justify-between text-base font-extrabold text-ink">
@@ -148,19 +158,26 @@ export default function CheckoutPage() {
               className={`rounded-2xl border-2 px-3 py-3 text-left ${method === "card" ? "border-ink bg-white" : "border-border bg-cream"}`}
             >
               <div className="text-sm font-extrabold">Tarjeta</div>
-              <div className="text-[11px] text-muted">MP 8,5%</div>
+              <div className="text-[11px] text-muted">{fmtARS(cardQuote.total)}</div>
             </button>
             <button
               type="button"
               onClick={() => setMethod("transfer")}
               className={`rounded-2xl border-2 px-3 py-3 text-left ${method === "transfer" ? "border-ink bg-white" : "border-border bg-cream"}`}
             >
-              <div className="text-sm font-extrabold">Transferencia</div>
-              <div className="text-[11px] text-muted">Más barato · MP 2%</div>
+              <div className="text-sm font-extrabold">Transferencia / dinero en cuenta</div>
+              <div className="text-[11px] text-muted">
+                {fmtARS(transferQuote.total)}
+                {transferSaves > 0 && (
+                  <span className="ml-1 font-extrabold text-[#2FA98A]">· ahorrás {fmtARS(transferSaves)}</span>
+                )}
+              </div>
             </button>
           </div>
           <div className="rounded-[14px] bg-[#E9F8F2] px-4 py-3.5 text-[12.5px] font-semibold leading-normal text-[#1F6E58]">
-            El organizador recibe {fmtARS(subtotal)} — el 100% del precio de la entrada.
+            {quote.feePayer === "buyer"
+              ? "El organizador recibe el 100% del precio de la entrada."
+              : "Pagás el precio de la entrada. Sin cargos de servicio."}
           </div>
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold text-ink">Nombre</span>

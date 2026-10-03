@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { fulfillOrder } from "@/lib/server/fulfill";
-import { getPayment, verifyMpSignature } from "@/lib/server/mp";
-import { getOrder, putOrder } from "@/lib/server/store";
+import { verifyMpSignature } from "@/lib/server/mp";
+import { fetchPaymentFor, settleOrder } from "@/lib/server/settle";
+import { getOrder } from "@/lib/server/store";
 
 export async function POST(req: Request) {
   const url = new URL(req.url);
+  const orderHint = url.searchParams.get("order");
   let type = url.searchParams.get("type") || url.searchParams.get("topic");
   let dataId = url.searchParams.get("data.id") || url.searchParams.get("id");
 
@@ -24,24 +25,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
   }
 
-  const payment = await getPayment(String(dataId));
-  if (!payment?.external_reference) return NextResponse.json({ ok: true });
-
-  const order = await getOrder(payment.external_reference);
-  if (!order) return NextResponse.json({ ok: true });
-
-  order.mpPaymentId = String(payment.id);
-  if (payment.status === "approved") {
-    order.status = "paid";
-    await putOrder(order);
-    await fulfillOrder(order.id);
-  } else if (payment.status === "rejected" || payment.status === "cancelled") {
-    order.status = "failed";
-    await putOrder(order);
-  } else {
-    await putOrder(order);
+  let orderId = orderHint;
+  if (!orderId) {
+    // Preferences viejas sin ?order=: probar con el token de plataforma.
+    const payment = await fetchPaymentFor(String(dataId), null);
+    orderId = payment?.external_reference ?? null;
   }
+  if (!orderId || !(await getOrder(orderId))) return NextResponse.json({ ok: true });
 
+  await settleOrder(orderId, String(dataId));
   return NextResponse.json({ ok: true });
 }
 

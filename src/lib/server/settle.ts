@@ -1,5 +1,6 @@
 import { fulfillOrder } from "./fulfill";
 import { getPayment } from "./mp";
+import { providerOfOrder } from "./payments";
 import {
   getOrder,
   getSellerAccessToken,
@@ -43,27 +44,27 @@ export async function fetchPaymentFor(paymentId: string, order: OrderRow | null)
 }
 
 /**
- * Aplica el estado de un pago de MP a la orden. Idempotente: webhook y back_url
+ * Aplica el estado de un pago a la orden. Idempotente: webhook y back_url
  * pueden llegar los dos, en cualquier orden.
  */
-export async function settleOrder(orderId: string, paymentId: string) {
+export async function settleOrder(orderId: string, paymentRef: string | null) {
   const order = await getOrder(orderId);
   if (!order) return null;
-  const payment = await fetchPaymentFor(paymentId, order);
-  if (!payment || payment.external_reference !== order.id) return order;
+  const provider = providerOfOrder(order.provider);
+  const payment = await provider.getStatus(order, paymentRef).catch(() => null);
+  if (!payment) return order;
+  if (payment.reference && payment.reference !== order.id) return order;
 
   order.mpPaymentId = String(payment.id);
 
   if (payment.status === "approved") {
     if (order.status === "paid") return order;
-    if (typeof payment.transaction_amount === "number" && payment.transaction_amount + 0.01 < order.total) {
-      // Monto distinto al de la orden: no emitir.
+    if (typeof payment.amount === "number" && payment.amount + 0.01 < order.total) {
       order.refundRequired = true;
       await releaseOrder(order, "mp_error");
       return order;
     }
     if (!order.reserved) {
-      // Pago que llegó después de que venciera la reserva: intentar retomar cupo.
       const again = await reserveTickets(order.eventSlug, reserveItems(order), 1);
       if (!again.ok) {
         order.status = "failed";
@@ -81,7 +82,7 @@ export async function settleOrder(orderId: string, paymentId: string) {
     return order;
   }
 
-  if (payment.status === "rejected" || payment.status === "cancelled") {
+  if (payment.status === "rejected") {
     if (order.status !== "paid") await releaseOrder(order, "rejected");
     return order;
   }

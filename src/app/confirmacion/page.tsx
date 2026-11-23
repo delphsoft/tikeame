@@ -64,7 +64,7 @@ function Inner() {
           <p className="mt-1.5 text-sm text-muted">
             {paid
               ? "Te enviamos las entradas a tu email si hay RESEND_API_KEY. También las tenés acá."
-              : "Si pagaste con Mercado Pago, esto se actualiza con el webhook."}
+              : "Cuando el procesador confirme el pago, esto se actualiza solo."}
           </p>
         </div>
 

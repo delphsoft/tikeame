@@ -26,7 +26,7 @@ export const PUBLIC_EVENTS: PublicEvent[] = [
     subtitle: "Fiesta Electrónica",
     name: "NEÓN — Fiesta Electrónica",
     description:
-      "Entradas para NEÓN en Crobar, Palermo. Sábado 12 de diciembre, 23:59. Electrónica, line up internacional, QR de un solo ingreso. Comprá online con Mercado Pago.",
+      "Entradas para NEÓN en Crobar, Palermo. Sábado 12 de diciembre, 23:59. Electrónica, line up internacional, QR de un solo ingreso. Comprá online con pago seguro.",
     startDate: "2026-12-12T23:59:00-03:00",
     dateLabel: "Sáb 12 de dic",
     timeLabel: "23:59",
@@ -54,7 +54,7 @@ export const PUBLIC_EVENTS: PublicEvent[] = [
     subtitle: "Drum & Bass",
     name: "BASS NIGHT — Drum & Bass",
     description:
-      "Entradas para BASS NIGHT en Groove, Palermo. Viernes 8 de enero. Drum & bass y UK garage. Comprá con Mercado Pago en Tickeame.",
+      "Entradas para BASS NIGHT en Groove, Palermo. Viernes 8 de enero. Drum & bass y UK garage. Comprá con pago seguro en Tickeame.",
     startDate: "2027-01-08T00:30:00-03:00",
     dateLabel: "Vie 8 de ene",
     timeLabel: "00:30",

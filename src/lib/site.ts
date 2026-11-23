@@ -9,15 +9,15 @@ export const site = {
   email: "hola@tickeame.com.ar",
   locale: "es_AR",
   description:
-    "Comprá entradas para fiestas y eventos en Argentina. Cargo visible antes de pagar, QR de un solo ingreso y Mercado Pago. Tickeame nunca custodia fondos.",
+    "Comprá entradas para fiestas y eventos en Argentina. Cargo visible antes de pagar, QR de un solo ingreso y pago seguro. Tickeame nunca custodia fondos.",
   organizerDescription:
-    "Ticketera para productoras. Split automático a tu cuenta de Mercado Pago, cargo de servicio en dos capas (procesador + Tickeame), check-in y RRPP por ingresos reales. Tickeame nunca custodia tu plata.",
+    "Ticketera para productoras. Split automático a tu cuenta Mobbex, cargo de servicio en dos capas (procesador + Tickeame), check-in y RRPP por ingresos reales. Tickeame nunca custodia tu plata.",
   keywords: [
     "entradas online Argentina",
     "ticketera argentina",
     "comprar entradas fiestas",
     "entradas QR",
-    "ticketera Mercado Pago",
+    "ticketera Mobbex",
     "eventos Palermo",
     "fiestas electrónicas Buenos Aires",
     "vender entradas online",

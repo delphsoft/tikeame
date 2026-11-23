@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { providerEnabled } from "@/lib/server/payments";
 import { currentUser } from "@/lib/server/auth";
 import { mpOAuthAuthorizeUrl, mpOAuthConfigured, mpPublicUrl, signOAuthState } from "@/lib/server/mp";
 
 export async function GET() {
+  if (!providerEnabled("mercadopago")) {
+    return NextResponse.json({ error: "Mercado Pago está deshabilitado por ahora." }, { status: 404 });
+  }
   const user = await currentUser();
   if (!user || (user.role !== "organizer" && user.role !== "admin")) {
     return NextResponse.redirect(`${mpPublicUrl()}/login?as=organizer&next=/organizador`);

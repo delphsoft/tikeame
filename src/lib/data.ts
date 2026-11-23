@@ -84,7 +84,7 @@ export const FAQS = [
   },
   {
     q: "¿Qué medios de pago aceptan?",
-    a: "Tarjetas de crédito/débito, Mercado Pago y transferencia bancaria.",
+    a: "Tarjetas de crédito y débito, y QR. Las cuotas dependen de tu banco.",
   },
 ];
 

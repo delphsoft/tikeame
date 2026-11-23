@@ -25,6 +25,9 @@ type MpStatus = {
   tierLabel?: string;
   monthlyGmv?: number;
   razonSocial?: string | null;
+  paymentProvider?: "mercadopago" | "mobbex";
+  enabledProviders?: ("mercadopago" | "mobbex")[];
+  mobbex?: { serverEnabled?: boolean; testMode?: boolean; connected?: boolean; entityName?: string | null };
   error?: string;
 };
 
@@ -33,7 +36,11 @@ function OrganizadorHomeInner() {
   const { user } = useSession();
   const params = useSearchParams();
   const mpFlash = params.get("mp");
+  const mbxFlash = params.get("mobbex");
   const [mp, setMp] = useState<MpStatus | null>(null);
+  const [providerError, setProviderError] = useState("");
+  const enabled = mp?.enabledProviders ?? ["mobbex"];
+  const mpOn = enabled.includes("mercadopago");
   const sold = mine.reduce((s, e) => s + eventSold(e), 0);
   const cap = mine.reduce((s, e) => s + eventCapacity(e), 0);
   const gross = mine.reduce((s, e) => s + eventGross(e), 0);
@@ -46,6 +53,21 @@ function OrganizadorHomeInner() {
       .catch(() => {});
   }, []);
 
+  async function chooseProvider(provider: "mercadopago" | "mobbex") {
+    setProviderError("");
+    const res = await fetch("/api/organizer/payment-provider", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider }),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) {
+      setProviderError(data.error || "No se pudo cambiar el procesador");
+      return;
+    }
+    setMp((prev) => (prev ? { ...prev, paymentProvider: provider } : prev));
+  }
+
   return (
     <div className="min-h-screen bg-cream">
       <OrganizerHeader active="eventos" />
@@ -57,7 +79,7 @@ function OrganizadorHomeInner() {
             </div>
             <h1 className="mt-1 font-display text-[28px] uppercase">Tus eventos</h1>
             <p className="mt-1 text-[13px] text-muted">
-              Creá, publicá y cobrá. El split va a tu Mercado Pago — Tickeame no custodia fondos.
+              Creá, publicá y cobrá. El split va a tu cuenta{mpOn ? " de Mercado Pago o Mobbex" : " Mobbex"} — Tickeame no custodia fondos.
             </p>
           </div>
           <Link
@@ -68,18 +90,73 @@ function OrganizadorHomeInner() {
           </Link>
         </div>
 
-        {mpFlash === "ok" && (
+        {mpOn && mpFlash === "ok" && (
           <div className="mt-5 rounded-md border-2 border-teal bg-white px-4 py-3 text-sm font-bold text-teal">
             Mercado Pago conectado. Las ventas van a tu cuenta, al toque.
           </div>
         )}
-        {mpFlash && mpFlash !== "ok" && (
+        {mpOn && mpFlash && mpFlash !== "ok" && (
           <div className="mt-5 rounded-md border-2 border-coral bg-white px-4 py-3 text-sm font-bold text-coral">
             No se pudo conectar MP ({mpFlash}). Revisá Client Secret y la redirect URI.
           </div>
         )}
+        {mbxFlash === "ok" && (
+          <div className="mt-5 rounded-md border-2 border-teal bg-white px-4 py-3 text-sm font-bold text-teal">
+            Mobbex listo. Las ventas van con split a tu cuenta.
+          </div>
+        )}
+        {mbxFlash && mbxFlash !== "ok" && (
+          <div className="mt-5 rounded-md border-2 border-coral bg-white px-4 py-3 text-sm font-bold text-coral">
+            No se pudo conectar Mobbex ({mbxFlash}).
+          </div>
+        )}
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
+        {enabled.length > 1 && (
+        <div className="mt-6 rounded-md border-2 border-ink bg-white p-5">
+          <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-coral">Cobrar con</div>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {(
+              [
+                ["mercadopago", "Mercado Pago", "~8% al instante con tarjeta", mp?.connected],
+                ["mobbex", "Mobbex", "~3,2% crédito · ~2,3% débito", mp?.mobbex?.connected],
+              ] as const
+            ).filter(([id]) => enabled.includes(id)).map(([id, label, cost, connected]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => chooseProvider(id)}
+                className={`rounded border-2 p-3 text-left ${(mp?.paymentProvider ?? "mobbex") === id ? "border-coral bg-coral/10" : "border-border bg-white"}`}
+              >
+                <div className="text-sm font-extrabold">
+                  {label} {connected ? "· conectado" : "· falta conectar"}
+                </div>
+                <div className="mt-1 text-xs text-muted">{cost}</div>
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            Vale para los próximos eventos. Los que ya tienen ventas siguen con el procesador original.
+          </p>
+          {providerError && <p className="mt-2 text-xs font-bold text-coral">{providerError}</p>}
+        </div>
+        )}
+
+        <div className={`mt-6 grid gap-3 md:grid-cols-2 ${mpOn ? "lg:grid-cols-3" : ""}`}>
+          <div className="rounded-md border-2 border-ink bg-white p-5">
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-coral">Mobbex</div>
+            <div className="mt-2 font-display text-2xl uppercase">
+              {mp?.mobbex?.serverEnabled ? "Cobro activo" : "Falta configurar"}
+            </div>
+            <p className="mt-2 text-[13px] text-muted">
+              {mp?.mobbex?.serverEnabled
+                ? `Split a tu cuenta${mp.mobbex.entityName ? ` · ${mp.mobbex.entityName}` : ""}. ${mp.mobbex.testMode ? "Modo test." : "Producción."}`
+                : "Sin API key no se puede cobrar. Pedile a Tickeame que cargue MOBBEX_API_KEY y MOBBEX_ACCESS_TOKEN."}
+            </p>
+            {mp && mp.mobbex?.serverEnabled === false && (
+              <p className="mt-2 text-[11px] text-muted">Falta MOBBEX_API_KEY y MOBBEX_ACCESS_TOKEN en Vercel.</p>
+            )}
+          </div>
+          {mpOn && (
           <div className="rounded-md border-2 border-ink bg-white p-5">
             <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-coral">Mercado Pago</div>
             <div className="mt-2 font-display text-2xl uppercase">
@@ -87,8 +164,8 @@ function OrganizadorHomeInner() {
             </div>
             <p className="mt-2 text-[13px] text-muted">
               {mp?.connected
-                ? `Split instantáneo a tu MP${mp.mpUserId ? ` · id ${mp.mpUserId}` : ""}. El comprador paga el cargo; vos recibís el 100% del precio de la entrada.`
-                : "Sin OAuth no hay split a tu cuenta: el cobro no puede salir. Conectá MP como Fanz/qrTicket, pero con marketplace_fee."}
+                ? `Split instantáneo a tu MP${mp.mpUserId ? ` · id ${mp.mpUserId}` : ""}.`
+                : "Sin OAuth no hay split a tu cuenta: el cobro no puede salir."}
             </p>
             <a
               href="/api/mp/oauth/start"
@@ -102,14 +179,15 @@ function OrganizadorHomeInner() {
               </p>
             )}
           </div>
+          )}
           <div className="rounded-md border-2 border-ink bg-ink p-5 text-cream">
             <div className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-coral">Tu tramo</div>
             <div className="mt-2 font-display text-2xl uppercase">
               {typeof mp?.platformPct === "number" ? formatPct(mp.platformPct) : "—"} Tickeame
             </div>
             <p className="mt-2 text-[13px] text-muted2">
-              {mp?.tierLabel ?? "Según GMV del mes"} · GMV {fmtARS(mp?.monthlyGmv ?? 0)}. Baja a 12% / 9% al pasar $2M y
-              $10M. El comprador ve procesamiento MP aparte.
+              {mp?.tierLabel ?? "Según GMV del mes"} · GMV {fmtARS(mp?.monthlyGmv ?? 0)}. Baja a 3,5% / 2% al pasar $2M y
+              $10M. Procesador aparte.
             </p>
           </div>
         </div>

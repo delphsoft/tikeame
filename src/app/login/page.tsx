@@ -46,7 +46,7 @@ function LoginForm() {
       return {
         kicker: "Panel organizador",
         title: isRegister ? "Creá tu cuenta de productora" : "Entrá a tu panel",
-        hint: "Vendé, cobrá en tu Mercado Pago y hacé check-in.",
+        hint: "Vendé, cobrá directo a tu cuenta y hacé check-in.",
       };
     }
     return {

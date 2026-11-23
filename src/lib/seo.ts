@@ -180,7 +180,7 @@ export function serviceJsonLd() {
     description: site.organizerDescription,
     offers: {
       "@type": "Offer",
-      description: "Comisión total visible de 2 a 5%, split Mercado Pago",
+      description: "Comisión total visible de 2 a 5%, split Mobbex",
     },
   };
 }

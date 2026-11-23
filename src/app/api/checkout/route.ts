@@ -4,12 +4,11 @@ import { currentUser } from "@/lib/server/auth";
 import { resolveCatalogEvent } from "@/lib/server/catalog";
 import { ConfigError, demoPayAllowed, hosted, supabaseConfigured } from "@/lib/server/env";
 import { fulfillOrder } from "@/lib/server/fulfill";
-import { createPreference, mpEnabled } from "@/lib/server/mp";
+import { getProvider, listProviders } from "@/lib/server/payments";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
 import { expireStalePending, releaseOrder, RESERVATION_MINUTES } from "@/lib/server/settle";
 import {
   getOrganizerProfile,
-  getSellerAccessToken,
   newOrderId,
   newViewToken,
   organizerMonthlyGmv,
@@ -24,9 +23,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Demasiados intentos. Probá en un rato." }, { status: 429 });
   }
 
-  if (hosted() && !mpEnabled()) {
+  if (hosted() && !listProviders().some((p) => p.serverEnabled)) {
     return NextResponse.json(
-      { error: "El cobro en producción requiere MP_ACCESS_TOKEN. El pago demo no corre en Vercel." },
+      { error: "El cobro en producción requiere credenciales del procesador (MOBBEX_API_KEY / MOBBEX_ACCESS_TOKEN). El pago demo no corre en Vercel." },
       { status: 503 },
     );
   }
@@ -76,6 +75,7 @@ export async function POST(req: Request) {
   const organizerId = event.organizerId;
   const profile = organizerId ? await getOrganizerProfile(organizerId) : null;
   const monthlyGmv = organizerId ? await organizerMonthlyGmv(organizerId) : 0;
+  const provider = getProvider(event.paymentProvider);
   const quote = quoteFees(subtotal, {
     method,
     plan: profile?.feePlan ?? "percent",
@@ -83,6 +83,7 @@ export async function POST(req: Request) {
     platformPctOverride: event.platformPct ?? null,
     feePayer: event.feePayer,
     transferDiscountPct: event.transferDiscountPct,
+    provider: provider.id,
   });
   const fee = quote.fee;
   const total = quote.total;
@@ -117,16 +118,16 @@ export async function POST(req: Request) {
     status: "pending",
     mpPreferenceId: null,
     mpPaymentId: null,
+    provider: provider.id,
     viewToken: newViewToken(),
     createdAt: new Date().toISOString(),
     reserved: false,
     expiresAt: new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000).toISOString(),
   };
 
-  const sellerAccessToken = mpEnabled() && organizerId ? await getSellerAccessToken(organizerId) : null;
-  if (mpEnabled() && organizerId && !sellerAccessToken) {
+  if (provider.serverEnabled() && organizerId && !(await provider.organizerReady(organizerId))) {
     return NextResponse.json(
-      { error: "El organizador todavía no conectó su Mercado Pago. No se puede cobrar el split." },
+      { error: `El organizador todavía no conectó ${provider.label}. No se puede cobrar el split.` },
       { status: 503 },
     );
   }
@@ -149,31 +150,29 @@ export async function POST(req: Request) {
     await putOrder(order);
   } catch (err) {
     if (order.reserved) await releaseOrder(order, "mp_error").catch(() => null);
-    const message = err instanceof ConfigError ? err.message : "No se pudo guardar la orden";
+    const message = err instanceof Error ? err.message : "No se pudo guardar la orden";
     return NextResponse.json({ error: message }, { status: 503 });
   }
 
-  if (mpEnabled()) {
+  const origin = (() => {
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+    if (!host) return undefined;
+    const proto =
+      req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+    return `${proto}://${host.split(",")[0].trim()}`;
+  })();
+
+  if (provider.serverEnabled()) {
     try {
-      const pref = await createPreference({
-        orderId: order.id,
-        title: `${event.title} — entradas`,
-        total,
-        fee: quote.platformFee,
-        email,
-        paymentMethod: method,
-        sellerAccessToken,
-        // La preference vence 5 min antes que la reserva.
-        expiresAt: new Date(Date.parse(order.expiresAt!) - 5 * 60 * 1000).toISOString(),
-      });
-      if (pref) {
-        order.mpPreferenceId = pref.id;
+      const checkout = await provider.createCheckout(order, `${event.title} — entradas`, origin);
+      if (checkout) {
+        order.mpPreferenceId = checkout.id;
         await putOrder(order);
         return NextResponse.json({
           orderId: order.id,
           viewToken: order.viewToken,
-          checkoutUrl: pref.initPoint,
-          mode: "mercadopago",
+          checkoutUrl: checkout.url,
+          mode: provider.id,
         });
       }
     } catch (err) {
@@ -187,7 +186,7 @@ export async function POST(req: Request) {
 
   if (!demoPayAllowed()) {
     await releaseOrder(order, "mp_error").catch(() => null);
-    return NextResponse.json({ error: "Mercado Pago no está configurado." }, { status: 503 });
+    return NextResponse.json({ error: "El procesador de pagos no está configurado." }, { status: 503 });
   }
 
   order.status = "paid";

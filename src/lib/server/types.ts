@@ -1,4 +1,4 @@
-import type { FeePayer, FeePlan, PaymentMethod } from "@/lib/pricing";
+import type { FeePayer, FeePlan, PaymentMethod, ProviderId } from "@/lib/pricing";
 
 export type Role = "buyer" | "organizer" | "admin";
 
@@ -10,6 +10,10 @@ export type OrganizerProfile = {
   feePlan: FeePlan;
   mpConnected?: boolean;
   mpUserId?: string | null;
+  paymentProvider?: ProviderId;
+  mobbexConnected?: boolean;
+  mobbexEntityUid?: string | null;
+  mobbexEntityName?: string | null;
 };
 
 export type MpTokens = {
@@ -69,6 +73,7 @@ export type EventRecord = {
   feePayer?: FeePayer;
   /** Descuento al comprador si paga por transferencia (0–10%). Fijo tras la primera venta. */
   transferDiscountPct?: number;
+  paymentProvider?: ProviderId;
 };
 
 export type ReserveItem = { key: string; qty: number };
@@ -111,6 +116,7 @@ export type OrderRow = {
   status: "pending" | "paid" | "failed";
   mpPreferenceId: string | null;
   mpPaymentId: string | null;
+  provider?: ProviderId;
   viewToken: string;
   createdAt: string;
   /** true mientras la orden tiene cupo tomado (pending o paid). */
@@ -147,6 +153,11 @@ export type StoreDriver = {
   getOrganizerProfile(userId: string): Promise<OrganizerProfile | null>;
   saveMpTokens(userId: string, tokens: MpTokens): Promise<void>;
   getMpTokens(userId: string): Promise<MpTokens | null>;
+  setPaymentProvider(userId: string, provider: ProviderId): Promise<void>;
+  saveMobbexConnection(
+    userId: string,
+    conn: { entityUid: string; entityName?: string | null },
+  ): Promise<void>;
   putEvent(event: EventRecord): Promise<void>;
   getEvent(slug: string): Promise<EventRecord | null>;
   listEvents(filter?: { organizerId?: string; status?: EventStatus }): Promise<EventRecord[]>;

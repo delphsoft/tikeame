@@ -293,7 +293,7 @@ export default function NuevoEventoPage() {
             <div className="font-display text-2xl text-coral">{planLabel.split(" · ")[0]}</div>
           </div>
           <div className="mt-4 text-xs font-extrabold uppercase tracking-[0.1em] text-ink">
-            ¿Quién paga Mercado Pago + Tickeame?
+            ¿Quién paga el procesador + Tickeame?
           </div>
           <div className="mt-2 grid gap-2 md:grid-cols-2">
             {(
@@ -329,11 +329,11 @@ export default function NuevoEventoPage() {
             ))}
           </div>
           <p className="mt-1 text-xs text-muted">
-            Con transferencia MP cobra ~2% en vez de ~8,5%: aun dando 5% de descuento, cobrás más
-            que con una venta con tarjeta.
+            Débito/transferencia le cuesta menos al procesador que el crédito: un descuento chico
+            puede empujar a tu público al medio más barato.
           </p>
           <p className="mt-3 text-xs text-muted">
-            {planLabel} (IVA incluido). Mercado Pago aparte (~8,5% tarjeta / ~2% transferencia). Una vez que hay
+            {planLabel} (IVA incluido). Procesador aparte (Mobbex ~3,2% crédito / ~2,3% débito, con IVA). Una vez que hay
             ventas, no se puede cambiar quién paga. Link: tickeame.com.ar/eventos/{slugPreview}
           </p>
         </section>

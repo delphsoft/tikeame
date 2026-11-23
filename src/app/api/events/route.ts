@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { MAX_TRANSFER_DISCOUNT_PCT, platformPctFor } from "@/lib/pricing";
+import { getProvider } from "@/lib/server/payments";
 import { currentUser } from "@/lib/server/auth";
 import {
   getEvent,
@@ -13,6 +14,10 @@ import {
 
 const STATUSES: EventStatus[] = ["draft", "on_sale", "paused", "sold_out"];
 
+function withActiveProvider(e: EventRecord): EventRecord {
+  return { ...e, paymentProvider: getProvider(e.paymentProvider).id };
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const mine = url.searchParams.get("mine") === "1";
@@ -23,14 +28,14 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "No autorizado" }, { status: 401 });
       }
       const events = await listEvents({ organizerId: user.role === "admin" ? undefined : user.id });
-      return NextResponse.json({ events });
+      return NextResponse.json({ events: events.map(withActiveProvider) });
     }
     // Público: a la venta + agotados (el agotado se sigue mostrando, no desaparece).
     const [onSale, soldOut] = await Promise.all([
       listEvents({ status: "on_sale" }),
       listEvents({ status: "sold_out" }),
     ]);
-    return NextResponse.json({ events: [...onSale, ...soldOut] });
+    return NextResponse.json({ events: [...onSale, ...soldOut].map(withActiveProvider) });
   } catch {
     return NextResponse.json({ events: [] });
   }
@@ -87,7 +92,10 @@ export async function POST(req: Request) {
   if (hasSales && existing) {
     event.feePayer = existing.feePayer ?? "organizer";
     event.transferDiscountPct = existing.transferDiscountPct ?? 0;
+    event.paymentProvider = existing.paymentProvider ?? "mercadopago"; // con ventas: no se toca
   } else {
+    const prof = await getOrganizerProfile(existing?.organizerId ?? user.id).catch(() => null);
+    event.paymentProvider = getProvider(prof?.paymentProvider).id;
     event.feePayer = event.feePayer === "buyer" ? "buyer" : "organizer";
     const d = Number(event.transferDiscountPct ?? 0);
     event.transferDiscountPct = Number.isFinite(d) ? Math.min(MAX_TRANSFER_DISCOUNT_PCT, Math.max(0, d)) : 0;

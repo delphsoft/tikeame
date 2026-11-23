@@ -21,7 +21,7 @@ const steps = [
     bg: "bg-coral",
     fg: "text-cream",
     rot: "rotate-[1.5deg] mt-3.5",
-    title: "Vendé con Mercado Pago",
+    title: "Cobrás directo a tu cuenta",
     body: "Split automático a tu cuenta. La plata nunca pasa por nosotros.",
   },
   {
@@ -107,7 +107,7 @@ export default function OrganizadoresPage() {
           <Reveal delay={80}>
             <div className="font-display text-[42px] text-teal">100%</div>
             <p className="mt-2 text-[13px] font-semibold text-muted2">
-              Split automático a tu cuenta de Mercado Pago, al instante.
+              Split automático a tu cuenta Mobbex: Tickeame nunca toca tu plata.
             </p>
           </Reveal>
           <Reveal delay={160}>

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/server/auth";
+import { mobbexEnabled, mobbexTestMode } from "@/lib/server/mobbex";
 import { mpOAuthConfigured } from "@/lib/server/mp";
+import { enabledProviderIds, getProvider } from "@/lib/server/payments";
 import { getOrganizerProfile, organizerMonthlyGmv } from "@/lib/server/store";
 import { MONTHLY_PLAN_ARS, platformPctFor } from "@/lib/pricing";
 
@@ -16,6 +18,14 @@ export async function GET() {
   return NextResponse.json({
     oauthConfigured: mpOAuthConfigured(),
     connected: Boolean(profile?.mpConnected),
+    paymentProvider: getProvider(profile?.paymentProvider).id,
+    enabledProviders: enabledProviderIds(),
+    mobbex: {
+      serverEnabled: mobbexEnabled(),
+      testMode: mobbexTestMode(),
+      connected: Boolean(profile?.mobbexConnected || mobbexEnabled()),
+      entityName: profile?.mobbexEntityName ?? null,
+    },
     mpUserId: profile?.mpUserId ?? null,
     plan,
     monthlyGmv,

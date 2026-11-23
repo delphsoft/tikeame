@@ -26,6 +26,7 @@ export default function CheckoutPage() {
     platformPctOverride: event?.platformPct ?? null,
     feePayer: event?.feePayer,
     transferDiscountPct: event?.transferDiscountPct ?? 0,
+    provider: event?.paymentProvider,
   };
   const cardQuote = quoteFees(subtotal, { ...pricing, method: "card" });
   const transferQuote = quoteFees(subtotal, { ...pricing, method: "transfer" });
@@ -77,8 +78,8 @@ export default function CheckoutPage() {
         setError(data.error || "No se pudo iniciar el pago");
         return;
       }
-      if (data.mode === "mercadopago") {
-        track("checkout_redirigido_mp", { eventSlug, total });
+      if (data.mode === "mercadopago" || data.mode === "mobbex") {
+        track("checkout_redirigido_mp", { eventSlug, total, mode: data.mode });
         window.location.href = data.checkoutUrl;
         return;
       }
@@ -221,10 +222,10 @@ export default function CheckoutPage() {
           <div className="flex items-center gap-3 rounded-[14px] border border-border bg-white px-4 py-3.5">
             <div className="size-9 shrink-0 rounded-lg bg-ink" />
             <div>
-              <div className="text-sm font-bold text-ink">Mercado Pago</div>
-              <div className="text-xs text-muted">
-                En Vercel cobrás con Checkout Pro. En local, si no hay token, se confirma en demo.
+              <div className="text-sm font-bold text-ink">
+                {event?.paymentProvider === "mercadopago" ? "Mercado Pago" : "Mobbex"}
               </div>
+              <div className="text-xs text-muted">Tarjeta de crédito, débito o QR. Cuotas según el banco.</div>
             </div>
           </div>
           {error && <p className="text-sm font-bold text-coral">{error}</p>}
@@ -238,7 +239,9 @@ export default function CheckoutPage() {
           >
             {busy ? "Procesando…" : `Pagar ${fmtARS(total)}`}
           </button>
-          <div className="mt-2 text-center text-[11px] text-muted">Pagás en Mercado Pago, sin salir de Tickeame.</div>
+          <div className="mt-2 text-center text-[11px] text-muted">
+            Pagás en {event?.paymentProvider === "mercadopago" ? "Mercado Pago" : "Mobbex"} de forma segura.
+          </div>
         </div>
       </div>
     </div>

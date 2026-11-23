@@ -22,17 +22,24 @@ function creds() {
 
 async function sb<T>(path: string, init?: RequestInit): Promise<T> {
   const { url, key } = creds();
-  const res = await fetch(`${url}/rest/v1/${path}`, {
-    ...init,
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-      ...(init?.headers ?? {}),
-    },
-    cache: "no-store",
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${url}/rest/v1/${path}`, {
+      ...init,
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+        ...(init?.headers ?? {}),
+      },
+      cache: "no-store",
+    });
+  } catch (err) {
+    throw new ConfigError(
+      `Supabase no responde (${err instanceof Error ? err.message : "error de red"}). El ref puede estar pausado.`,
+    );
+  }
   if (!res.ok) {
     const text = await res.text();
     if (res.status === 409) throw new Error("Ese email ya está registrado");
@@ -145,6 +152,10 @@ async function loadProfile(userId: string): Promise<OrganizerProfile | null> {
       feePlan: doc.feePlan === "monthly" ? "monthly" : "percent",
       mpConnected: Boolean(doc.tokens?.accessToken),
       mpUserId: doc.tokens?.userId ?? null,
+      paymentProvider: doc.paymentProvider,
+      mobbexConnected: Boolean(doc.mobbexEntityUid),
+      mobbexEntityUid: doc.mobbexEntityUid ?? null,
+      mobbexEntityName: doc.mobbexEntityName ?? null,
     };
   } catch {
     return null;
@@ -275,6 +286,16 @@ export const supabaseStore: StoreDriver = {
   },
   async getMpTokens(userId) {
     return loadMpTokens(userId);
+  },
+  async setPaymentProvider(userId, provider) {
+    await persistProfileDoc(userId, { paymentProvider: provider });
+  },
+  async saveMobbexConnection(userId, conn) {
+    await persistProfileDoc(userId, {
+      mobbexConnected: true,
+      mobbexEntityUid: conn.entityUid,
+      mobbexEntityName: conn.entityName ?? null,
+    });
   },
   async putEvent(event) {
     try {

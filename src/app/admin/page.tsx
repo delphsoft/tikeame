@@ -85,7 +85,7 @@ export default async function AdminPage() {
         <h1 className="mt-1 font-display text-[28px] uppercase">Super admin</h1>
         <p className="mt-1 max-w-xl text-[13px] text-muted">
           Usuarios, órdenes, tickets y check-ins reales. Tickeame nunca custodia fondos: el cobro
-          va por Mercado Pago.
+          va por Mobbex con split.
         </p>
 
         <div className="mt-7 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">

@@ -49,6 +49,7 @@ export function EventPage({ slug }: { slug: string }) {
     method: "card",
     platformPctOverride: event?.platformPct ?? null,
     feePayer: event?.feePayer,
+    provider: event?.paymentProvider,
   });
   const fee = quote.fee;
   const total = quote.total;

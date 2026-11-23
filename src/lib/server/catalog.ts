@@ -1,4 +1,6 @@
+import { DEFAULT_PROVIDER } from "@/lib/pricing";
 import { EVENT, TICKET_TIERS } from "@/lib/data";
+import { getProvider } from "./payments";
 
 export type CatalogTicket = { key: string; name: string; price: number };
 
@@ -120,6 +122,8 @@ export async function resolveCatalogEvent(slug: string) {
         platformPct: live.platformPct ?? null,
         feePayer: live.feePayer ?? ("organizer" as const),
         transferDiscountPct: live.transferDiscountPct ?? 0,
+        // Si el procesador del evento quedó deshabilitado, cobra con el habilitado.
+        paymentProvider: getProvider(live.paymentProvider).id,
       };
     }
   } catch {
@@ -135,5 +139,6 @@ export async function resolveCatalogEvent(slug: string) {
     platformPct: null as number | null,
     feePayer: "organizer" as "organizer" | "buyer",
     transferDiscountPct: 0,
+    paymentProvider: DEFAULT_PROVIDER as "mercadopago" | "mobbex",
   };
 }

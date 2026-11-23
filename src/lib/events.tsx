@@ -53,6 +53,7 @@ export type ManagedEvent = {
   tierLabel?: string;
   feePayer?: "organizer" | "buyer";
   transferDiscountPct?: number;
+  paymentProvider?: "mercadopago" | "mobbex";
 };
 
 export type Organizer = {

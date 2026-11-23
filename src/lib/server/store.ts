@@ -4,12 +4,14 @@ import { verifyPassword } from "./password";
 import { mpOAuthRefresh } from "./mp";
 import { memoryStore } from "./store-memory";
 import { supabaseStore } from "./store-supabase";
+import type { ProviderId } from "@/lib/pricing";
 import type { EventRecord, EventStatus, MpTokens, OrderRow, OrganizerProfile, ReserveItem, Role, ScanRow, StoreDriver, TicketRow } from "./types";
 
 export type { EventRecord, EventStatus, OrderItem, OrderRow, OrganizerProfile, Role, ScanRow, TicketRow, User } from "./types";
 
 function driver(): StoreDriver {
   requirePersistentStore();
+  if (process.env.TICKET_STORE === "memory") return memoryStore;
   return supabaseConfigured() ? supabaseStore : memoryStore;
 }
 
@@ -60,6 +62,17 @@ export async function saveMpTokens(userId: string, tokens: MpTokens) {
 
 export async function getMpTokens(userId: string) {
   return driver().getMpTokens(userId);
+}
+
+export async function setPaymentProvider(userId: string, provider: ProviderId) {
+  return driver().setPaymentProvider(userId, provider);
+}
+
+export async function saveMobbexConnection(
+  userId: string,
+  conn: { entityUid: string; entityName?: string | null },
+) {
+  return driver().saveMobbexConnection(userId, conn);
 }
 
 export async function getSellerAccessToken(userId: string): Promise<string | null> {

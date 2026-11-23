@@ -1,13 +1,17 @@
 export type PaymentMethod = "card" | "transfer";
 export type FeePlan = "percent" | "monthly";
-/** Quién absorbe el costo (MP + Tickeame). Lo elige el organizador por evento. */
+/** Quién absorbe el costo (procesador + Tickeame). Lo elige el organizador por evento. */
 export type FeePayer = "organizer" | "buyer";
+export type ProviderId = "mercadopago" | "mobbex";
 
-/** Comisión de Mercado Pago estimada (con IVA), descontada del lado del vendedor. */
-export const PROCESSOR_PCT: Record<PaymentMethod, number> = {
-  card: 8.5,
-  transfer: 2,
+/** Comisión del procesador estimada (con IVA). */
+export const PROCESSOR_PCT: Record<ProviderId, Record<PaymentMethod, number>> = {
+  mercadopago: { card: 8.5, transfer: 2 },
+  mobbex: { card: 3.15, transfer: 2.3 },
 };
+
+/** Mercado Pago está apagado por ahora (ver PAYMENT_PROVIDERS en payments.ts): todo cobra con Mobbex. */
+export const DEFAULT_PROVIDER: ProviderId = "mobbex";
 
 /** Comisión Tickeame escalonada por GMV mensual del organizador (mes calendario). */
 export const VOLUME_TIERS = [
@@ -83,6 +87,7 @@ export function quoteFees(
     method?: PaymentMethod;
     platformPctOverride?: number | null;
     feePayer?: FeePayer;
+    provider?: ProviderId;
     /** % de descuento al comprador si paga por transferencia (lo pone el organizador). */
     transferDiscountPct?: number | null;
   } = {},
@@ -91,7 +96,8 @@ export function quoteFees(
   const plan = opts.plan ?? "percent";
   const feePayer = opts.feePayer ?? DEFAULT_FEE_PAYER;
   const monthlyGmv = opts.monthlyGmv ?? 0;
-  const processorPct = PROCESSOR_PCT[method];
+  const provider = opts.provider ?? DEFAULT_PROVIDER;
+  const processorPct = PROCESSOR_PCT[provider][method];
   const base = platformPctFor(monthlyGmv, plan);
   const frozen = plan === "percent" && typeof opts.platformPctOverride === "number";
   const platformPct = frozen ? (opts.platformPctOverride as number) : base.pct;

@@ -2,7 +2,7 @@
 
 Ticketera argentina. La plata de tus entradas, en tu cuenta al toque.
 
-Split automático por Mercado Pago Marketplace — Tickeame nunca custodia fondos.
+Split automático por Mobbex — Tickeame nunca custodia fondos.
 
 Este repo es el prototipo navegable armado a partir de las pantallas de Tiko (landing, evento NEÓN, checkout, confirmación, panel organizador, check-in y RRPP).
 
@@ -19,7 +19,7 @@ Este repo es el prototipo navegable armado a partir de las pantallas de Tiko (la
 2. 4 fondos animados del hero → `/fondos`
 3. Landing de organizadores → `/organizadores`
 4. Evento público NEÓN → `/eventos/neon`
-5. Checkout (Mercado Pago simulado) → `/checkout`
+5. Checkout (Mobbex) → `/checkout`
 6. Confirmación + QR → `/confirmacion`
 7. Panel organizador (crear eventos) → `/organizador`
 8. Super admin → `/admin`
@@ -30,7 +30,7 @@ SEO: las páginas públicas (`/`, `/organizadores`, `/eventos/*`) tienen title, 
 
 ## Backend (lo que falta para cobrar en serio)
 
-Checkout pega a `/api/checkout`. En **local**, si no hay `MP_ACCESS_TOKEN`, confirma en demo y emite QR. En **Vercel** el demo-pay está apagado: hace falta Mercado Pago + Supabase + `SESSION_SECRET`.
+Checkout pega a `/api/checkout`. En **local**, si no hay credenciales del procesador, confirma en demo y emite QR. En **Vercel** el demo-pay está apagado: hace falta Mobbex + Supabase + `SESSION_SECRET`.
 
 En Vercel / `.env.local`:
 
@@ -49,7 +49,22 @@ SESSION_SECRET=             # min 16 chars, obligatorio en Vercel
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 BOOTSTRAP_ADMIN_EMAIL=      # ese email, al registrarse, sale admin
+MOBBEX_API_KEY=
+MOBBEX_ACCESS_TOKEN=
+MOBBEX_TEST=1
+MOBBEX_WEBHOOK_SECRET=      # opcional, firma propia de la URL del webhook (default vacío)
+PAYMENT_PROVIDERS=mobbex    # agregar ,mercadopago para reactivar MP
+TICKET_STORE=memory         # solo local, si el proyecto de Supabase está pausado
 ```
+
+### Procesadores de pago
+
+**Hoy solo Mobbex está habilitado** (Dev Connect). Mercado Pago sigue en el código pero
+apagado; para reactivarlo: `PAYMENT_PROVIDERS=mobbex,mercadopago`. Con más de uno habilitado,
+cada organizador elige en `/organizador` con qué cobra. El procesador se congela en cada evento al publicarlo. Código en
+`src/lib/server/payments.ts` (interfaz común), `mp.ts` y `mobbex.ts`.
+
+Mobbex: checkout con `split` (organizador = operación hija, `fee` = comisión Tickeame).
 
 Corrê `supabase/schema.sql` en el SQL editor del proyecto. RLS on, sin policies para anon.
 

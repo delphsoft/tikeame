@@ -43,7 +43,7 @@ export default function OpenGraphImage() {
           El tikeame que te lleva a la fiesta.
         </div>
         <div style={{ color: "#B9AFD4", fontSize: 26, marginTop: 28, fontWeight: 600 }}>
-          Entradas · QR de un ingreso · Mercado Pago
+          Entradas · QR de un ingreso · Pago seguro
         </div>
         <div
           style={{

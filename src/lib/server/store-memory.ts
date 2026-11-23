@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { hosted } from "./env";
 import { applyReservation } from "./inventory";
 import { hashPassword } from "./password";
+import type { ProviderId } from "@/lib/pricing";
 import type {
   EventRecord,
   MpTokens,
@@ -23,6 +24,7 @@ type Db = {
   events: EventRecord[];
   profiles: Record<string, OrganizerProfile>;
   mpTokens: Record<string, MpTokens>;
+  mobbex: Record<string, { entityUid: string; entityName?: string | null }>;
 };
 
 function emptyDb(): Db {
@@ -51,7 +53,7 @@ function emptyDb(): Db {
           passwordHash: hashPassword("tikeame"),
         },
       ];
-  return { users, orders: [], tickets: [], scans: [], events: [], profiles: {}, mpTokens: {} };
+  return { users, orders: [], tickets: [], scans: [], events: [], profiles: {}, mpTokens: {}, mobbex: {} };
 }
 
 const g = globalThis as typeof globalThis & { __tikeameDb?: Db };
@@ -66,11 +68,28 @@ function filePath() {
   return join(dir, "tikeame-store.json");
 }
 
+function normalize(db: Partial<Db> | null | undefined): Db {
+  const base = emptyDb();
+  return {
+    users: db?.users ?? base.users,
+    orders: db?.orders ?? [],
+    tickets: db?.tickets ?? [],
+    scans: db?.scans ?? [],
+    events: db?.events ?? [],
+    profiles: db?.profiles ?? {},
+    mpTokens: db?.mpTokens ?? {},
+    mobbex: db?.mobbex ?? {},
+  };
+}
+
 function load(): Db {
-  if (g.__tikeameDb) return g.__tikeameDb;
+  if (g.__tikeameDb) {
+    g.__tikeameDb = normalize(g.__tikeameDb);
+    return g.__tikeameDb;
+  }
   try {
     const raw = readFileSync(filePath(), "utf8");
-    g.__tikeameDb = JSON.parse(raw) as Db;
+    g.__tikeameDb = normalize(JSON.parse(raw) as Db);
     return g.__tikeameDb;
   } catch {
     g.__tikeameDb = emptyDb();
@@ -123,11 +142,30 @@ export const memoryStore: StoreDriver = {
     const profile = dbx.profiles[userId];
     if (!profile) return null;
     const tokens = dbx.mpTokens[userId];
-    return { ...profile, mpConnected: Boolean(tokens?.accessToken), mpUserId: tokens?.userId ?? null };
+    const mbx = dbx.mobbex?.[userId];
+    return {
+      ...profile,
+      mpConnected: Boolean(tokens?.accessToken),
+      mpUserId: tokens?.userId ?? null,
+      mobbexConnected: Boolean(mbx?.entityUid),
+      mobbexEntityUid: mbx?.entityUid ?? null,
+      mobbexEntityName: mbx?.entityName ?? null,
+    };
   },
   async saveMpTokens(userId, tokens) {
     const dbx = load();
     dbx.mpTokens[userId] = tokens;
+    save(dbx);
+  },
+  async setPaymentProvider(userId, provider: ProviderId) {
+    const dbx = load();
+    dbx.profiles[userId] = { ...(dbx.profiles[userId] || { cuit: null, razonSocial: null, condicionIva: null, domicilioFiscal: null, feePlan: "percent" }), paymentProvider: provider };
+    save(dbx);
+  },
+  async saveMobbexConnection(userId, conn) {
+    const dbx = load();
+    dbx.mobbex = dbx.mobbex || {};
+    dbx.mobbex[userId] = conn;
     save(dbx);
   },
   async getMpTokens(userId) {

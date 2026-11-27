@@ -73,8 +73,9 @@ export async function createMobbexCheckout(input: {
 }): Promise<MobbexCheckout> {
   if (!mobbexEnabled()) throw new Error("Falta MOBBEX_API_KEY / MOBBEX_ACCESS_TOKEN.");
   const origin = publicHttpsOrigin(input.origin);
+  const webhookOrigin = mobbexPublicUrl().replace(/\/$/, "");
   const webhookSecret = process.env.MOBBEX_WEBHOOK_SECRET || "";
-  const webhook = new URL(`${origin}/api/mobbex/webhook`);
+  const webhook = new URL(`${webhookOrigin}/api/mobbex/webhook`);
   webhook.searchParams.set("order", input.order.id);
   if (webhookSecret) webhook.searchParams.set("s", signWebhook(input.order.id, webhookSecret));
 
@@ -130,8 +131,8 @@ export type MobbexPaymentStatus = {
 
 function mapStatus(code: unknown): MobbexPaymentStatus["status"] {
   const n = Number(code);
-  if (n === 200 || n === 201 || n === 2 || n === 3) return "approved";
-  if (n >= 400 || n === 1) return "rejected";
+  if (n === 200 || n === 201 || n === 210 || n === 2 || n === 3) return "approved";
+  if (n >= 400) return "rejected";
   return "pending";
 }
 

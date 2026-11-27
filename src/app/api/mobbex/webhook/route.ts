@@ -3,15 +3,37 @@ import { parseMobbexWebhook, verifyMobbexWebhook } from "@/lib/server/mobbex";
 import { settleOrder } from "@/lib/server/settle";
 import { getOrder } from "@/lib/server/store";
 
+async function readBody(req: Request): Promise<unknown> {
+  const ct = req.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    return req.json().catch(() => null);
+  }
+  if (ct.includes("form")) {
+    const form = await req.formData().catch(() => null);
+    if (!form) return null;
+    const raw = form.get("data");
+    if (typeof raw === "string") {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return { data: raw };
+      }
+    }
+    return Object.fromEntries(form.entries());
+  }
+  const text = await req.text().catch(() => "");
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: Request) {
   const url = new URL(req.url);
   const orderHint = url.searchParams.get("order");
-  let body: unknown = null;
-  try {
-    body = await req.json();
-  } catch {
-    body = null;
-  }
+  const body = await readBody(req);
   const parsed = body ? parseMobbexWebhook(body) : null;
   const orderId = orderHint || parsed?.reference;
   if (!orderId) return NextResponse.json({ ok: true });

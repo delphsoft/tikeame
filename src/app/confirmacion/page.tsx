@@ -33,17 +33,32 @@ function Inner() {
 
   useEffect(() => {
     if (!orderId) return;
-    const frame = requestAnimationFrame(() => {
-      const q = viewToken ? `?t=${encodeURIComponent(viewToken)}` : "";
-      fetch(`/api/orders/${encodeURIComponent(orderId)}${q}`)
-        .then((r) => r.json())
-        .then((j) => {
-          if (j.error) setErr(j.error);
-          else setData(j as Payload);
-        })
-        .catch(() => setErr("No se pudo cargar la orden"));
-    });
-    return () => cancelAnimationFrame(frame);
+    let stopped = false;
+    let tries = 0;
+    const q = viewToken ? `?t=${encodeURIComponent(viewToken)}` : "";
+
+    async function load() {
+      try {
+        const r = await fetch(`/api/orders/${encodeURIComponent(orderId)}${q}`);
+        const j = await r.json();
+        if (stopped) return;
+        if (j.error) {
+          setErr(j.error);
+          return;
+        }
+        setErr("");
+        setData(j as Payload);
+        if (j.order?.status === "paid" || j.order?.status === "failed") return;
+        if (tries++ < 16) setTimeout(load, 2500);
+      } catch {
+        if (!stopped) setErr("No se pudo cargar la orden");
+      }
+    }
+
+    load();
+    return () => {
+      stopped = true;
+    };
   }, [orderId, viewToken]);
 
   const paid = data?.order.status === "paid";

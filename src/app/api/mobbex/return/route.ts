@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { publicRequestOrigin } from "@/lib/server/env";
 import { settleOrder } from "@/lib/server/settle";
 import { getOrder } from "@/lib/server/store";
 import { site } from "@/lib/site";
@@ -7,6 +8,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const orderId = url.searchParams.get("order") || url.searchParams.get("reference");
   const status = url.searchParams.get("status") || url.searchParams.get("transactionStatus");
+  const origin = publicRequestOrigin(req) || site.url;
 
   if (orderId) {
     const order = await getOrder(orderId);
@@ -14,7 +16,7 @@ export async function GET(req: Request) {
   }
 
   if (status && /fail|cancel|error|reject/i.test(status)) {
-    return NextResponse.redirect(new URL(`/checkout?error=pago`, site.url));
+    return NextResponse.redirect(new URL(`/checkout?error=pago`, origin));
   }
 
   let token = "";
@@ -25,5 +27,5 @@ export async function GET(req: Request) {
   const dest = orderId
     ? `/confirmacion?order=${encodeURIComponent(orderId)}${token ? `&t=${encodeURIComponent(token)}` : ""}`
     : "/confirmacion";
-  return NextResponse.redirect(new URL(dest, site.url));
+  return NextResponse.redirect(new URL(dest, origin));
 }

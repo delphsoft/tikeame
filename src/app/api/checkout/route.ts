@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { quoteFees, type PaymentMethod } from "@/lib/pricing";
 import { currentUser } from "@/lib/server/auth";
 import { resolveCatalogEvent } from "@/lib/server/catalog";
-import { ConfigError, demoPayAllowed, hosted, supabaseConfigured } from "@/lib/server/env";
+import { ConfigError, demoPayAllowed, hosted, publicRequestOrigin, supabaseConfigured } from "@/lib/server/env";
 import { fulfillOrder } from "@/lib/server/fulfill";
 import { getProvider, listProviders } from "@/lib/server/payments";
 import { clientIp, rateLimit } from "@/lib/server/rate-limit";
@@ -154,13 +154,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status: 503 });
   }
 
-  const origin = (() => {
-    const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-    if (!host) return undefined;
-    const proto =
-      req.headers.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
-    return `${proto}://${host.split(",")[0].trim()}`;
-  })();
+  const origin = publicRequestOrigin(req);
 
   if (provider.serverEnabled()) {
     try {

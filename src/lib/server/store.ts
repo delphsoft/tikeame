@@ -107,6 +107,10 @@ export async function organizerMonthlyGmv(organizerId: string, when?: Date) {
   return driver().organizerMonthlyGmv(organizerId, when);
 }
 
+export async function organizerPaidTickets(organizerId: string) {
+  return driver().organizerPaidTickets(organizerId);
+}
+
 export async function listUsers() {
   return driver().listUsers();
 }

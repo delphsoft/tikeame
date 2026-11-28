@@ -368,6 +368,13 @@ export const supabaseStore: StoreDriver = {
       .filter((o) => o.organizerId === organizerId)
       .reduce((s, o) => s + o.subtotal, 0);
   },
+  async organizerPaidTickets(organizerId) {
+    const rows = await sb<OrderDb[]>(`tikeame_orders?status=eq.paid&select=*`);
+    return (rows ?? [])
+      .map(toOrder)
+      .filter((o) => o.organizerId === organizerId)
+      .reduce((s, o) => s + o.items.reduce((n, i) => n + i.qty, 0), 0);
+  },
   async listUsers() {
     const rows = await sb<UserRow[]>("tikeame_users?select=*&order=created_at.desc&limit=300");
     return (rows ?? []).map((row) => toUser(row));

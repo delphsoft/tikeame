@@ -91,7 +91,7 @@ export default function EventDashPage() {
         <div className="mt-7 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Entradas vendidas", value: String(sold), sub: `de ${cap}` },
-            { label: "Ingresos netos", value: fmtARS(net), sub: q.feePayer === "buyer" ? "100% para vos · el cargo lo paga el comprador" : `después de ${procLabel} y Tickeame (${formatPct(q.organizerCostPct)})` },
+            { label: "Ingresos netos", value: fmtARS(net), sub: `después de ${procLabel} y Tickeame (${formatPct(q.organizerCostPct)})` },
             { label: "Entradas restantes", value: String(Math.max(0, cap - sold)), sub: `de ${cap} totales` },
             { label: "Ocupación", value: cap ? `${Math.round((sold / cap) * 100)}%` : "0%", sub: "sobre capacidad total" },
           ].map((s) => (
@@ -130,9 +130,7 @@ export default function EventDashPage() {
               <div className="text-[11px] font-extrabold uppercase text-teal">Ingresos netos</div>
               <div className="mt-1 font-display text-[22px]">{fmtARS(net)}</div>
               <div className="mt-0.5 text-xs text-muted">
-                {q.feePayer === "buyer"
-                  ? `Cargo al comprador: ${procLabel} ~${fmtARS(mpFee)} + Tickeame ${fmtARS(fee)}`
-                  : `${procLabel} ~${fmtARS(mpFee)} + Tickeame ${fmtARS(fee)} · ya descontados (estimado con tarjeta)`}
+                {`${procLabel} ~${fmtARS(mpFee)} + Tickeame ${fmtARS(fee)} · ya descontados (estimado con tarjeta)`}
               </div>
             </div>
           </div>

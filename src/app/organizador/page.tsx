@@ -24,6 +24,8 @@ type MpStatus = {
   platformPct?: number;
   tierLabel?: string;
   monthlyGmv?: number;
+  ticketsSold?: number;
+  freeTickets?: number;
   razonSocial?: string | null;
   paymentProvider?: "mercadopago" | "mobbex";
   enabledProviders?: ("mercadopago" | "mobbex")[];
@@ -186,8 +188,8 @@ function OrganizadorHomeInner() {
               {typeof mp?.platformPct === "number" ? formatPct(mp.platformPct) : "—"} Tickeame
             </div>
             <p className="mt-2 text-[13px] text-muted2">
-              {mp?.tierLabel ?? "Según GMV del mes"} · GMV {fmtARS(mp?.monthlyGmv ?? 0)}. Baja a 3,5% / 2% al pasar $2M y
-              $10M. Procesador aparte.
+              {mp?.tierLabel ?? "0% las primeras 100 entradas"} · {mp?.ticketsSold ?? 0}/{mp?.freeTickets ?? 100} vendidas.
+              Después 2,5% (2% si GMV &gt; $10M/mes). Mobbex aparte, lo absorbe el organizador. El comprador no paga cargo.
             </p>
           </div>
         </div>

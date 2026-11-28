@@ -22,26 +22,19 @@ pensado por un contador para productoras PyME argentinas.
 
 ### 2.1 Estructura de la transacción
 
-**Comisión Tickeame**, escalonada por GMV mensual del organizador (mes calendario), sobre el
-precio de la entrada. Se congela en el evento al publicarlo:
+**Comisión Tickeame** sobre el precio de la entrada (IVA incluido). El comprador **nunca**
+paga cargo de servicio. Mobbex (~3,15% crédito / ~2,3% débito) lo absorbe el organizador.
 
-| GMV del mes | Tickeame |
+| Entradas pagas lifetime del organizador | Tickeame |
 |---|---|
-| < $2M | 5% |
-| $2M – $10M | 3,5% |
-| > $10M | 2% |
+| Primeras 100 | **0%** |
+| Después | **2,5%** (2% si GMV mensual &gt; $10M) |
 
-Mercado Pago aparte (~8,5% tarjeta / ~2% transferencia, lo descuenta del lado del vendedor).
+Se calcula en el checkout con el conteo real de tickets paid (`organizerPaidTickets`).
 
-**Quién paga (lo elige el organizador por evento, `feePayer`):**
-- `organizer` (default): el comprador paga el precio publicado; MP + Tickeame se descuentan
-  del cobro del organizador.
-- `buyer`: se suma un cargo de servicio al comprador, grosseado para que el organizador
-  reciba el 100% (`total = (precio + Tickeame) / (1 − MP%)`).
-Una vez que el evento tiene ventas, `feePayer` no se puede cambiar.
+**feePayer** queda fijo en `organizer`.
 
-**Comisiones con IVA incluido** (`COMMISSION_IVA_INCLUDED`): el 5% es lo que paga el
-organizador; Tickeame factura 5% / 1,21 de neto + IVA.
+**Comisiones con IVA incluido** (`COMMISSION_IVA_INCLUDED`).
 
 **Descuento por transferencia** (`transferDiscountPct`, 0/3/5%, opcional por evento): el
 organizador puede bajarle el precio al comprador que paga con transferencia/dinero en cuenta.

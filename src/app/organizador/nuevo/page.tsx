@@ -28,8 +28,7 @@ export default function NuevoEventoPage() {
   const router = useRouter();
   const { user } = useSession();
   const { events, addEvent } = useEvents();
-  const [planLabel, setPlanLabel] = useState("5% · primer tramo");
-  const [feePayer, setFeePayer] = useState<"organizer" | "buyer">("organizer");
+  const [planLabel, setPlanLabel] = useState("0% · primeras 100 entradas");
   const [transferDiscountPct, setTransferDiscountPct] = useState(0);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
@@ -103,7 +102,7 @@ export default function NuevoEventoPage() {
       hero,
       commissionPct: 0,
       status,
-      feePayer,
+      feePayer: "organizer" as const,
       transferDiscountPct,
       organizerId: user?.id || "tiko",
       organizerName: user?.name || "Tiko Producciones",
@@ -292,27 +291,10 @@ export default function NuevoEventoPage() {
             </div>
             <div className="font-display text-2xl text-coral">{planLabel.split(" · ")[0]}</div>
           </div>
-          <div className="mt-4 text-xs font-extrabold uppercase tracking-[0.1em] text-ink">
-            ¿Quién paga el procesador + Tickeame?
-          </div>
-          <div className="mt-2 grid gap-2 md:grid-cols-2">
-            {(
-              [
-                ["organizer", "Yo (organizador)", "El público paga el precio publicado. Se descuenta de tu cobro."],
-                ["buyer", "El comprador", "Se suma un cargo de servicio. Vos recibís el 100% del precio."],
-              ] as const
-            ).map(([value, label, help]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setFeePayer(value)}
-                className={`rounded border-2 p-3 text-left ${feePayer === value ? "border-coral bg-coral/10" : "border-border bg-white"}`}
-              >
-                <div className="text-sm font-extrabold">{label}</div>
-                <div className="mt-1 text-xs text-muted">{help}</div>
-              </button>
-            ))}
-          </div>
+          <p className="mt-3 text-xs text-muted">
+            El comprador paga el precio publicado, sin cargo. Tickeame 0% hasta 100 entradas vendidas
+            (después 2,5%). Mobbex (~3,2% crédito) se descuenta de tu cobro.
+          </p>
           <div className="mt-4 text-xs font-extrabold uppercase tracking-[0.1em] text-ink">
             Descuento si pagan por transferencia
           </div>
@@ -333,8 +315,8 @@ export default function NuevoEventoPage() {
             puede empujar a tu público al medio más barato.
           </p>
           <p className="mt-3 text-xs text-muted">
-            {planLabel} (IVA incluido). Procesador aparte (Mobbex ~3,2% crédito / ~2,3% débito, con IVA). Una vez que hay
-            ventas, no se puede cambiar quién paga. Link: tickeame.com.ar/eventos/{slugPreview}
+            {planLabel} (IVA incluido). Mobbex aparte (~3,2% crédito / ~2,3% débito). Link:
+            tickeame.com.ar/eventos/{slugPreview}
           </p>
         </section>
 

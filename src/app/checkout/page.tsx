@@ -23,8 +23,7 @@ export default function CheckoutPage() {
   const subtotal = tiers.reduce((s, t) => s + (qty[t.key] ?? 0) * t.price, 0);
   const itemCount = tiers.reduce((s, t) => s + (qty[t.key] ?? 0), 0);
   const pricing = {
-    platformPctOverride: event?.platformPct ?? null,
-    feePayer: event?.feePayer,
+    feePayer: "organizer" as const,
     transferDiscountPct: event?.transferDiscountPct ?? 0,
     provider: event?.paymentProvider,
   };
@@ -176,9 +175,7 @@ export default function CheckoutPage() {
             </button>
           </div>
           <div className="rounded-[14px] bg-[#E9F8F2] px-4 py-3.5 text-[12.5px] font-semibold leading-normal text-[#1F6E58]">
-            {quote.feePayer === "buyer"
-              ? "El organizador recibe el 100% del precio de la entrada."
-              : "Pagás el precio de la entrada. Sin cargos de servicio."}
+            Pagás el precio de la entrada. Sin cargo de servicio.
           </div>
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold text-ink">Nombre</span>

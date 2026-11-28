@@ -47,8 +47,7 @@ export function EventPage({ slug }: { slug: string }) {
   const subtotal = tickets.reduce((s, t) => s + qty[t.key] * t.price, 0);
   const quote = quoteFees(subtotal, {
     method: "card",
-    platformPctOverride: event?.platformPct ?? null,
-    feePayer: event?.feePayer,
+    feePayer: "organizer",
     provider: event?.paymentProvider,
   });
   const fee = quote.fee;

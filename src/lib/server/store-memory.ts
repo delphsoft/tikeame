@@ -201,6 +201,11 @@ export const memoryStore: StoreDriver = {
       )
       .reduce((s, o) => s + o.subtotal, 0);
   },
+  async organizerPaidTickets(organizerId) {
+    return load()
+      .orders.filter((o) => o.status === "paid" && o.organizerId === organizerId)
+      .reduce((s, o) => s + o.items.reduce((n, i) => n + i.qty, 0), 0);
+  },
   async listUsers() {
     return load().users;
   },

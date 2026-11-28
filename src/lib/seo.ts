@@ -180,7 +180,7 @@ export function serviceJsonLd() {
     description: site.organizerDescription,
     offers: {
       "@type": "Offer",
-      description: "Comisión total visible de 2 a 5%, split Mobbex",
+      description: "0% Tickeame las primeras 100 entradas, después 2,5%. El comprador no paga cargo.",
     },
   };
 }

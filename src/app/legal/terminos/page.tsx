@@ -13,7 +13,7 @@ export default function Page() {
     <LegalLayout title="Términos y condiciones">
       <p>Tickeame es una ticketera. No custodiamos fondos: el cobro se hace vía el procesador de pagos (Mobbex), con split a la cuenta de la productora.</p>
       <p>La entrada es personal y de un solo ingreso. Se invalida al escanearse en la puerta. Podés transferirla hasta 24 hs antes, desde Mis entradas, cuando esa función esté activa.</p>
-      <p>La productora elige, para cada evento, si la comisión de Tickeame y el costo del procesador de pagos los paga ella o el comprador. Si los paga el comprador, el cargo de servicio se muestra antes de pagar. No hay cargos extra en el checkout.</p>
+      <p>El comprador paga el precio publicado, sin cargo de servicio. La comisión de Tickeame (0% las primeras 100 entradas vendidas del organizador, después 2,5%) y el costo de Mobbex se descuentan del cobro de la productora.</p>
       <p>Si el evento se cancela, se reembolsa el 100% del valor de la entrada en los plazos que indique la productora, como mínimo 10 días hábiles.</p>
       <p>Contacto: hola@tickeame.com.ar</p>
     </LegalLayout>

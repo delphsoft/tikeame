@@ -12,6 +12,7 @@ import {
   newOrderId,
   newViewToken,
   organizerMonthlyGmv,
+  organizerPaidTickets,
   putOrder,
   reserveTickets,
   type OrderItem,
@@ -75,13 +76,14 @@ export async function POST(req: Request) {
   const organizerId = event.organizerId;
   const profile = organizerId ? await getOrganizerProfile(organizerId) : null;
   const monthlyGmv = organizerId ? await organizerMonthlyGmv(organizerId) : 0;
+  const ticketsSold = organizerId ? await organizerPaidTickets(organizerId) : 0;
   const provider = getProvider(event.paymentProvider);
   const quote = quoteFees(subtotal, {
     method,
     plan: profile?.feePlan ?? "percent",
     monthlyGmv,
-    platformPctOverride: event.platformPct ?? null,
-    feePayer: event.feePayer,
+    ticketsSold,
+    feePayer: "organizer",
     transferDiscountPct: event.transferDiscountPct,
     provider: provider.id,
   });

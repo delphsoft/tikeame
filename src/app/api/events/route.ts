@@ -7,6 +7,7 @@ import {
   getOrganizerProfile,
   listEvents,
   organizerMonthlyGmv,
+  organizerPaidTickets,
   putEvent,
   type EventRecord,
   type EventStatus,
@@ -87,16 +88,16 @@ export async function POST(req: Request) {
   if (event.status === "sold_out" && !full) event.status = "on_sale";
   if (event.status === "on_sale" && full) event.status = "sold_out";
 
-  // Quién paga: elegible por evento; se congela apenas hay una venta (el precio no cambia a mitad).
+  // El comprador nunca paga cargo. feePayer queda en organizer.
   const hasSales = (existing?.tickets ?? []).some((t) => t.sold > 0);
   if (hasSales && existing) {
-    event.feePayer = existing.feePayer ?? "organizer";
+    event.feePayer = "organizer";
     event.transferDiscountPct = existing.transferDiscountPct ?? 0;
     event.paymentProvider = existing.paymentProvider ?? "mercadopago"; // con ventas: no se toca
   } else {
     const prof = await getOrganizerProfile(existing?.organizerId ?? user.id).catch(() => null);
     event.paymentProvider = getProvider(prof?.paymentProvider).id;
-    event.feePayer = event.feePayer === "buyer" ? "buyer" : "organizer";
+    event.feePayer = "organizer";
     const d = Number(event.transferDiscountPct ?? 0);
     event.transferDiscountPct = Number.isFinite(d) ? Math.min(MAX_TRANSFER_DISCOUNT_PCT, Math.max(0, d)) : 0;
   }
@@ -112,7 +113,8 @@ export async function POST(req: Request) {
     const profile = await getOrganizerProfile(event.organizerId);
     if ((profile?.feePlan ?? "percent") === "percent") {
       const gmv = await organizerMonthlyGmv(event.organizerId);
-      const tier = platformPctFor(gmv, "percent");
+      const sold = await organizerPaidTickets(event.organizerId);
+      const tier = platformPctFor(gmv, "percent", sold);
       event.platformPct = tier.pct;
       event.tierLabel = tier.tierLabel;
     } else {

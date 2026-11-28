@@ -162,6 +162,8 @@ export type StoreDriver = {
   getEvent(slug: string): Promise<EventRecord | null>;
   listEvents(filter?: { organizerId?: string; status?: EventStatus }): Promise<EventRecord[]>;
   organizerMonthlyGmv(organizerId: string, when?: Date): Promise<number>;
+  /** Entradas pagas lifetime (suma de qty en órdenes paid). */
+  organizerPaidTickets(organizerId: string): Promise<number>;
   putOrder(order: OrderRow): Promise<void>;
   getOrder(id: string): Promise<OrderRow | null>;
   ordersByEmail(email: string): Promise<OrderRow[]>;

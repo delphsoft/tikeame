@@ -99,9 +99,9 @@ export default function OrganizadoresPage() {
       <section className="bg-ink px-5 py-11 md:px-12">
         <div className="mx-auto grid max-w-[1240px] gap-6 md:grid-cols-3">
           <Reveal>
-            <div className="font-display text-[42px] text-coral">5%</div>
+            <div className="font-display text-[42px] text-coral">0%</div>
             <p className="mt-2 text-[13px] font-semibold text-muted2">
-              Comisión Tickeame con IVA incluido, baja con tu volumen hasta 2%. Vos elegís si la paga tu público o vos.
+              Tickeame las primeras 100 entradas. Después 2,5%. El comprador no paga cargo; Mobbex lo absorbés vos.
             </p>
           </Reveal>
           <Reveal delay={80}>

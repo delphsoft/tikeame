@@ -13,11 +13,13 @@ export const PROCESSOR_PCT: Record<ProviderId, Record<PaymentMethod, number>> = 
 /** Mercado Pago está apagado por ahora (ver PAYMENT_PROVIDERS en payments.ts): todo cobra con Mobbex. */
 export const DEFAULT_PROVIDER: ProviderId = "mobbex";
 
-/** Comisión Tickeame escalonada por GMV mensual del organizador (mes calendario). */
+/** Primeras N entradas pagas del organizador (lifetime): Tickeame 0%. */
+export const FREE_TICKETS = 100;
+
+/** Comisión Tickeame después del cupo gratis, por GMV mensual (IVA incluido). */
 export const VOLUME_TIERS = [
-  { max: 2_000_000, pct: 5, label: "< $2M / mes" },
-  { max: 10_000_000, pct: 3.5, label: "$2M – $10M / mes" },
-  { max: Infinity, pct: 2, label: "> $10M / mes" },
+  { max: 10_000_000, pct: 2.5, label: "2,5% después de 100 entradas" },
+  { max: Infinity, pct: 2, label: "2% · GMV > $10M / mes" },
 ] as const;
 
 export const DEFAULT_FEE_PAYER: FeePayer = "organizer";
@@ -63,21 +65,25 @@ function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-export function platformPctFor(monthlyGmv: number, plan: FeePlan): { pct: number; tierLabel: string } {
+export function platformPctFor(
+  monthlyGmv: number,
+  plan: FeePlan,
+  ticketsSold = 0,
+): { pct: number; tierLabel: string } {
   if (plan === "monthly") return { pct: 0, tierLabel: "Plan mensual" };
+  if (ticketsSold < FREE_TICKETS) {
+    return {
+      pct: 0,
+      tierLabel: `0% Tickeame · ${ticketsSold}/${FREE_TICKETS} entradas`,
+    };
+  }
   const tier = VOLUME_TIERS.find((t) => monthlyGmv < t.max) ?? VOLUME_TIERS[VOLUME_TIERS.length - 1];
   return { pct: tier.pct, tierLabel: tier.label };
 }
 
 /**
- * Comisión Tickeame = platformPct del precio de la entrada (siempre el mismo $).
- *
- * feePayer "organizer": el comprador paga el precio publicado.
- *   organizador recibe = precio − MP − Tickeame
- * feePayer "buyer": el comprador paga precio + cargo; el organizador recibe el 100%.
- *   total = (precio + Tickeame) / (1 − MP%)   ← MP cobra sobre el total
- *
- * `platformPctOverride`: % congelado en el evento al publicarlo.
+ * El comprador siempre paga el precio publicado (sin cargo Tickeame ni recargo de procesador).
+ * Organizador recibe = precio − Mobbex − Tickeame (0% hasta FREE_TICKETS entradas pagas lifetime).
  */
 export function quoteFees(
   subtotal: number,
@@ -88,20 +94,21 @@ export function quoteFees(
     platformPctOverride?: number | null;
     feePayer?: FeePayer;
     provider?: ProviderId;
+    ticketsSold?: number;
     /** % de descuento al comprador si paga por transferencia (lo pone el organizador). */
     transferDiscountPct?: number | null;
   } = {},
 ): FeeQuote {
   const method = opts.method ?? "card";
   const plan = opts.plan ?? "percent";
-  const feePayer = opts.feePayer ?? DEFAULT_FEE_PAYER;
+  const feePayer: FeePayer = "organizer";
   const monthlyGmv = opts.monthlyGmv ?? 0;
+  const ticketsSold = Math.max(0, opts.ticketsSold ?? 0);
   const provider = opts.provider ?? DEFAULT_PROVIDER;
   const processorPct = PROCESSOR_PCT[provider][method];
-  const base = platformPctFor(monthlyGmv, plan);
-  const frozen = plan === "percent" && typeof opts.platformPctOverride === "number";
-  const platformPct = frozen ? (opts.platformPctOverride as number) : base.pct;
-  const tierLabel = frozen ? `Comisión Tickeame ${formatPct(platformPct)} (fijada al publicar)` : base.tierLabel;
+  const base = platformPctFor(monthlyGmv, plan, ticketsSold);
+  const platformPct = base.pct;
+  const tierLabel = base.tierLabel;
 
   const listPrice = round2(Math.max(0, subtotal));
   const discPct =
@@ -109,8 +116,7 @@ export function quoteFees(
   const discount = round2(listPrice * (discPct / 100));
   const price = round2(listPrice - discount);
   const platformFee = round2(price * (platformPct / 100));
-  const total =
-    feePayer === "buyer" && price > 0 ? round2((price + platformFee) / (1 - processorPct / 100)) : price;
+  const total = price;
   const processorFee = round2(total * (processorPct / 100));
   const fee = round2(total - price);
   const organizerNet = round2(total - processorFee - platformFee);
